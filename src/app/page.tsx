@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import AsciiArt from '@/components/AsciiArt';
 import HeroSection from '@/components/HeroSection';
+import ProjectsSection from '@/components/ProjectsSection';
 
 export default function Home() {
   return (
@@ -16,7 +17,7 @@ export default function Home() {
         />
       </div>
 
-      {/* Main content */}
+      {/* Hero */}
       <div className="relative flex min-h-screen items-center justify-center p-8">
         <div className="flex flex-col items-center gap-12 lg:flex-row lg:items-center lg:gap-24">
           <AsciiArt />
@@ -25,6 +26,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Projects */}
+      <ProjectsSection />
     </>
   );
 }
