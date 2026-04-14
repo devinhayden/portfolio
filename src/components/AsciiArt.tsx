@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { Scissors } from '@phosphor-icons/react';
 
 interface FallingChar {
   id: number;
@@ -128,9 +129,12 @@ export default function AsciiArt() {
   const [stateIndex, setStateIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [leaves, setLeaves] = useState<FallingChar[]>([]);
+  const [isHovered, setIsHovered] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clickSoundRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     fetch('/ascii-bonsai.txt')
@@ -139,6 +143,19 @@ export default function AsciiArt() {
         const base = processAsciiArt(text);
         setVariants([base, ...buildVariants(base)]);
       });
+  }, []);
+
+  useEffect(() => {
+    // Lazily create audio object on client; safe in Next.js app router
+    clickSoundRef.current = new Audio('/sounds/leaf-cut.mp3');
+    clickSoundRef.current.volume = 0.6;
+
+    return () => {
+      if (clickSoundRef.current) {
+        clickSoundRef.current.pause();
+        clickSoundRef.current = null;
+      }
+    };
   }, []);
 
   // Ambient falling characters
@@ -205,6 +222,16 @@ export default function AsciiArt() {
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (!variants.length || isTransitioning) return;
 
+      // Play snip sound; allow rapid retriggers by rewinding
+      if (clickSoundRef.current) {
+        try {
+          clickSoundRef.current.currentTime = 0;
+          void clickSoundRef.current.play();
+        } catch {
+          // Ignore playback errors (e.g. browser policies)
+        }
+      }
+
       // Compute click position as % of container
       const rect = containerRef.current?.getBoundingClientRect();
       const clickX = rect ? ((e.clientX - rect.left) / rect.width) * 100 : 50;
@@ -229,6 +256,10 @@ export default function AsciiArt() {
     };
   }, []);
 
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  }, []);
+
   // Compute fixed dimensions from the original (largest) art so that pruned
   // variants never cause the pre to shrink and shift the surrounding layout.
   const baseDims = useMemo(() => {
@@ -245,10 +276,23 @@ export default function AsciiArt() {
   const currentArt = variants[stateIndex];
 
   return (
+    <>
+      {isHovered && (
+        <div
+          className="pointer-events-none fixed z-50"
+          style={{ left: mousePos.x, top: mousePos.y, transform: 'translate(-4px, -4px)' }}
+          aria-hidden="true"
+        >
+          <Scissors size={28} weight="fill" className="rotate-90 text-foreground" />
+        </div>
+      )}
     <div
       ref={containerRef}
-      className="relative cursor-pointer"
+      className={`relative ${isHovered ? 'cursor-none' : 'cursor-pointer'}`}
       onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onMouseMove={handleMouseMove}
       title="Click to prune"
       role="button"
       tabIndex={0}
@@ -294,5 +338,6 @@ export default function AsciiArt() {
         </span>
       ))}
     </div>
+    </>
   );
 }
