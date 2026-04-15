@@ -3,7 +3,6 @@
 import { AnimatedMousePointerClick } from '@/components/AnimatedMousePointerClick';
 import { AnimatedPencil } from '@/components/AnimatedPencil';
 import { AnimatedEraser } from '@/components/AnimatedEraser';
-import { AnimatedFlaskConical } from '@/components/AnimatedFlaskConical';
 import { type ToolMode } from '@/components/DrawingCanvas';
 
 interface HubToolbarProps {
@@ -50,16 +49,6 @@ export default function HubToolbar({ mode, onModeChange }: HubToolbarProps) {
           <AnimatedEraser size={22} />
         </button>
 
-        {/* Divider */}
-        <div className="h-px w-full bg-[#e1dcd3]" />
-
-        {/* Flask — reserved */}
-        <button
-          aria-label="Experiment mode"
-          className={btnClass(false)}
-        >
-          <AnimatedFlaskConical size={18} />
-        </button>
 
 
       </div>
