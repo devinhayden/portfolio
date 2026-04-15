@@ -25,8 +25,11 @@ export default function DrawingCanvas({ mode, contentRef }: DrawingCanvasProps) 
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(dpr, dpr);
     ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = 'rgba(194, 34, 34, 0.88)';
     ctx.lineWidth = 3;
@@ -52,6 +55,7 @@ export default function DrawingCanvas({ mode, contentRef }: DrawingCanvasProps) 
       ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
       ctx.stroke();
     }
+    ctx.restore();
   }, []);
 
   // Resize canvas to match the full scrollable content dimensions
@@ -61,11 +65,14 @@ export default function DrawingCanvas({ mode, contentRef }: DrawingCanvasProps) 
     if (!canvas || !content) return;
 
     const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
       const newW = content.offsetWidth;
       const newH = content.offsetHeight;
-      if (newW === canvas.width && newH === canvas.height) return;
-      canvas.width = newW;
-      canvas.height = newH;
+      if (Math.round(newW * dpr) === canvas.width && Math.round(newH * dpr) === canvas.height) return;
+      canvas.width = Math.round(newW * dpr);
+      canvas.height = Math.round(newH * dpr);
+      canvas.style.width = `${newW}px`;
+      canvas.style.height = `${newH}px`;
       redraw();
     };
 
@@ -101,11 +108,15 @@ export default function DrawingCanvas({ mode, contentRef }: DrawingCanvasProps) 
         // Paint a dot for short taps
         const ctx = canvasRef.current?.getContext('2d');
         if (ctx) {
+          const dpr = window.devicePixelRatio || 1;
+          ctx.save();
+          ctx.scale(dpr, dpr);
           ctx.globalCompositeOperation = 'source-over';
           ctx.fillStyle = 'rgba(194, 34, 34, 0.9)';
           ctx.beginPath();
           ctx.arc(pos.x, pos.y, 1.8, 0, Math.PI * 2);
           ctx.fill();
+          ctx.restore();
         }
       } else if (mode === 'erase') {
         eraseAt(pos);
@@ -128,7 +139,10 @@ export default function DrawingCanvas({ mode, contentRef }: DrawingCanvasProps) 
         currentStroke.current.push(pos);
         const pts = currentStroke.current;
         const len = pts.length;
+        const dpr = window.devicePixelRatio || 1;
 
+        ctx.save();
+        ctx.scale(dpr, dpr);
         ctx.globalCompositeOperation = 'source-over';
         ctx.strokeStyle = 'rgba(194, 34, 34, 0.88)';
         ctx.lineWidth = 3;
@@ -148,6 +162,7 @@ export default function DrawingCanvas({ mode, contentRef }: DrawingCanvasProps) 
           ctx.lineTo(pos.x, pos.y);
           ctx.stroke();
         }
+        ctx.restore();
       } else if (mode === 'erase') {
         eraseAt(pos);
       }

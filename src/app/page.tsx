@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useAnimate, AnimatePresence, useAnimation } from 'motion/react';
-import { EnvelopeSimple, XLogo, LinkedinLogo, Eye, EyeSlash } from '@phosphor-icons/react';
+import { motion, useAnimate, AnimatePresence } from 'motion/react';
+import { EnvelopeSimple, XLogo, LinkedinLogo } from '@phosphor-icons/react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { TegakiRenderer } from 'tegaki/react';
 import caveat from 'tegaki/fonts/caveat';
 import HubToolbar from '@/components/HubToolbar';
@@ -12,13 +13,14 @@ import DrawingCanvas, { type ToolMode } from '@/components/DrawingCanvas';
 const projects = [
   {
     id: 'voxel',
-    description: 'Enterprise construction tooling for global workflows',
-    video: '/projectFiles/trimbleCoverAnimation.mp4',
+    description: 'Intuitive and secure voice AI for healthcare clinics',
+    video: '/projectFiles/voxelCoverAnimation.mp4',
   },
   {
     id: 'trimble',
-    description: 'Intuitive and secure voice AI for healthcare clinics',
-    video: '/projectFiles/voxelCoverAnimation.mp4',
+    description: 'Enterprise construction tooling for global workflows',
+    video: '/projectFiles/trimbleCoverAnimation.mp4',
+    href: '/projects/trimble',
   },
 ];
 
@@ -28,7 +30,6 @@ export default function HubPage() {
   const [toolMode, setToolMode] = useState<ToolMode>('pointer');
   const [annotationsVisible, setAnnotationsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'work' | 'experiments'>('work');
-  const eyeControls = useAnimation();
   const contentRef = useRef<HTMLDivElement>(null);
   const scribbleAnimRef = useRef<ReturnType<typeof animate> | null>(null);
 
@@ -59,10 +60,8 @@ export default function HubPage() {
   const resolveWritingRef = useRef<(() => void) | null>(null);
   const writingDoneRef = useRef(false);
 
-  const handleAnnotationToggle = async () => {
-    await eyeControls.start({ scaleY: 0, transition: { duration: 0.08, ease: 'easeIn' } });
+  const handleAnnotationToggle = () => {
     setAnnotationsVisible(v => !v);
-    await eyeControls.start({ scaleY: 1, transition: { duration: 0.12, ease: 'easeOut' } });
   };
 
   useEffect(() => {
@@ -106,12 +105,14 @@ export default function HubPage() {
     <div ref={scope} className="h-screen bg-[#f7f6f4] p-4 font-geist">
       <div className="relative h-full rounded-[12px] bg-white overflow-hidden">
 
-        <div id="toolbar" style={{ opacity: 0 }}>
+        <div id="toolbar" className="hidden md:block" style={{ opacity: 0 }}>
           <HubToolbar mode={toolMode} onModeChange={setToolMode} />
         </div>
 
         <div className="relative h-full overflow-y-auto">
-          <DrawingCanvas mode={toolMode} contentRef={contentRef} />
+          <div className="hidden md:block">
+            <DrawingCanvas mode={toolMode} contentRef={contentRef} />
+          </div>
 
           {/* ── Annotation overlay — switches per tab, crops on resize ── */}
           <AnimatePresence mode="wait">
@@ -125,14 +126,14 @@ export default function HubPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
-                className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none z-10"
+                className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none z-10 hidden md:block"
                 style={{ width: '1440px', maxWidth: 'none' }}
               />
             )}
           </AnimatePresence>
 
-          <div ref={contentRef} className="flex items-start justify-center px-6 pb-24 pt-[127px]">
-            <div className="flex w-[600px] shrink-0 flex-col gap-10">
+          <div ref={contentRef} className="flex items-start justify-center px-6 pb-24 pt-14 md:pt-[127px]">
+            <div className="flex w-full md:w-[600px] md:shrink-0 flex-col gap-10">
 
               {/* ── Intro + contact ──────────────────── */}
               <div className="flex flex-col gap-10">
@@ -143,7 +144,7 @@ export default function HubPage() {
                   {/* Animated headline */}
                   <div
                     id="headline"
-                    className="flex items-baseline gap-2 whitespace-nowrap w-max"
+                    className="flex flex-wrap md:flex-nowrap items-baseline gap-x-2 gap-y-1 md:whitespace-nowrap md:w-max"
                     style={{ opacity: 0, transform: 'translateY(6px)' }}
                   >
                     <p className="text-[16px] font-semibold text-black">
@@ -175,7 +176,7 @@ export default function HubPage() {
                       font={caveat}
                       time={{ mode: 'uncontrolled', playing: isWriting, speed: 4.5, initialTime: 0 }}
                       onComplete={handleWritingComplete}
-                      style={{ fontSize: '24px', color: '#c22222', lineHeight: 1, width: '520px' }}
+                      style={{ fontSize: '24px', color: '#c22222', lineHeight: 1, width: 'min(520px, 100%)' }}
                     >
                       someone who loves to experiment.
                     </TegakiRenderer>
@@ -187,16 +188,34 @@ export default function HubPage() {
                     className="text-[16px] font-normal text-[#6e6e6e]"
                     style={{ opacity: 0 }}
                   >
-                    Feel free to poke around and explore his whiteboard
-                    <motion.button
-                      animate={eyeControls}
-                      onClick={handleAnnotationToggle}
-                      className="inline-flex items-center text-[#b0b0b0] hover:text-[#888] transition-colors cursor-pointer align-middle ml-[7px]"
-                      style={{ originY: '50%' }}
-                      aria-label={annotationsVisible ? 'Hide annotations' : 'Show annotations'}
-                    >
-                      {annotationsVisible ? <EyeSlash size={18} /> : <Eye size={18} />}
-                    </motion.button>
+                    {/* Mobile */}
+                    <span className="md:hidden">Check out his workspace on desktop for more detail.</span>
+                    {/* Desktop */}
+                    <span className="hidden md:inline">
+                      Feel free to{' '}
+                      <button
+                        onClick={handleAnnotationToggle}
+                        className="relative inline cursor-pointer group"
+                        aria-label={annotationsVisible ? 'Hide annotations' : 'Show annotations'}
+                      >
+                        {/* Hover preview tint */}
+                        <span
+                          className="absolute rounded-[3px] bg-[#fef08a] opacity-0 group-hover:opacity-60 transition-opacity duration-150 pointer-events-none"
+                          style={{ inset: '0px -3px' }}
+                        />
+                        {/* Sweep fill */}
+                        <motion.span
+                          className="absolute rounded-[3px] bg-[#fde047] pointer-events-none"
+                          style={{ inset: '0px -3px', originX: 0 }}
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: annotationsVisible ? 1 : 0 }}
+                          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                        />
+                        {/* Text */}
+                        <span className="relative border-b border-dashed border-[#aaa]">highlight</span>
+                      </button>
+                      {' '}his whiteboard notes.
+                    </span>
                   </p>
                 </div>
 
@@ -259,37 +278,56 @@ export default function HubPage() {
                   </button>
                 </div>
 
+                <AnimatePresence mode="wait">
                 {activeTab === 'work' && (
-                  <div className="flex flex-col gap-12">
-                    {projects.map((project) => (
-                      <div
-                        key={project.id}
-                        className="flex flex-col overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)] w-full"
-                      >
-                        {/* Full-bleed video */}
-                        <div className="aspect-[1518/1080] w-full overflow-hidden">
-                          <video
-                            autoPlay loop muted playsInline
-                            className="h-full w-full object-cover"
-                            src={project.video}
-                          />
-                        </div>
-                        {/* Caption bar */}
-                        <div className="flex items-center justify-between border-t border-[rgba(176,176,176,0.5)] px-3 py-3">
-                          <p className="text-[14px] text-[#6e6e6e] whitespace-nowrap">
-                            {project.description}
-                          </p>
-                          <div className="-rotate-45 shrink-0">
-                            <span className="text-[16px] text-[#6e6e6e]">→</span>
+                  <motion.div
+                    key="work"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18, ease: 'easeInOut' }}
+                    className="flex flex-col gap-12"
+                  >
+                    {projects.map((project) => {
+                      const Card = (
+                        <div className={`flex flex-col overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)] w-full${project.href ? ' hover:border-[rgba(176,176,176,0.9)] transition-colors' : ''}`}>
+                          {/* Full-bleed video */}
+                          <div className="aspect-[1518/1080] w-full overflow-hidden">
+                            <video
+                              autoPlay loop muted playsInline
+                              className="h-full w-full object-cover"
+                              src={project.video}
+                            />
+                          </div>
+                          {/* Caption bar */}
+                          <div className="flex items-center justify-between border-t border-[rgba(176,176,176,0.5)] px-3 py-3">
+                            <p className="text-[14px] text-[#6e6e6e]">
+                              {project.description}
+                            </p>
+                            <div className="-rotate-45 shrink-0">
+                              <span className="text-[16px] text-[#6e6e6e]">→</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      );
+                      return project.href ? (
+                        <Link key={project.id} href={project.href}>{Card}</Link>
+                      ) : (
+                        <div key={project.id}>{Card}</div>
+                      );
+                    })}
+                  </motion.div>
                 )}
 
                 {activeTab === 'experiments' && (
-                  <div className="flex gap-6 items-start">
+                  <motion.div
+                    key="experiments"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18, ease: 'easeInOut' }}
+                    className="flex flex-col md:flex-row gap-6 items-start"
+                  >
 
                     {/* ── Left column (main) ── */}
                     <div className="flex flex-1 flex-col gap-[26px] min-w-0">
@@ -326,10 +364,10 @@ export default function HubPage() {
                     </div>
 
                     {/* ── Right column (narrow) ── */}
-                    <div className="flex flex-col gap-6 shrink-0 w-[193px]">
+                    <div className="flex flex-col gap-6 w-full md:shrink-0 md:w-[193px]">
 
                       {/* Concert photos — 3 stacked */}
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-row md:flex-col gap-3">
                         {[
                           { src: '/projectFiles/musicPhoto1.png', alt: 'Concert photography' },
                           { src: '/projectFiles/musicPhoto2.png', alt: 'Concert photography' },
@@ -347,8 +385,9 @@ export default function HubPage() {
                       </div>
                     </div>
 
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </div>
 
             </div>
