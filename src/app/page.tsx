@@ -26,6 +26,7 @@ export default function HubPage() {
   const [isWriting, setIsWriting] = useState(false);
   const [toolMode, setToolMode] = useState<ToolMode>('pointer');
   const [annotationsVisible, setAnnotationsVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<'work' | 'experiments'>('work');
   const eyeControls = useAnimation();
   const contentRef = useRef<HTMLDivElement>(null);
   const scribbleAnimRef = useRef<ReturnType<typeof animate> | null>(null);
@@ -87,8 +88,7 @@ export default function HubPage() {
         animate('#contact',  { opacity: 1, y: 0 }, { duration: 0.9, ease: 'easeOut', delay: 0.1 }),
         animate('#divider',  { opacity: 1 },       { duration: 0.9, ease: 'easeOut', delay: 0.2 }),
         animate('#projects', { opacity: 1, y: 0 }, { duration: 1.0, ease: 'easeOut', delay: 0.3 }),
-        animate('#toolbar',     { opacity: 1 },       { duration: 0.9, ease: 'easeOut', delay: 0.15 }),
-        animate('#eye-toggle',  { opacity: 1 },       { duration: 0.9, ease: 'easeOut', delay: 0.25 }),
+        animate('#toolbar',  { opacity: 1 }, { duration: 0.9, ease: 'easeOut', delay: 0.15 }),
       ]);
     };
 
@@ -107,25 +107,6 @@ export default function HubPage() {
 
         <div id="toolbar" style={{ opacity: 0 }}>
           <HubToolbar mode={toolMode} onModeChange={setToolMode} />
-        </div>
-
-        {/* Eye / Annotations toggle */}
-        <div
-          id="eye-toggle"
-          className="absolute bottom-5 left-5 z-20 group flex items-center gap-2 cursor-pointer"
-          style={{ opacity: 0 }}
-          onClick={handleAnnotationToggle}
-        >
-          <motion.div
-            animate={eyeControls}
-            className="text-[#b0b0b0] hover:text-[#888] transition-colors"
-            style={{ originY: '50%' }}
-          >
-            {annotationsVisible ? <EyeSlash size={16} /> : <Eye size={16} />}
-          </motion.div>
-          <span className="text-[11px] font-medium text-[#b0b0b0] tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap select-none">
-            {annotationsVisible ? 'HIDE ANNOTATIONS' : 'SHOW ANNOTATIONS'}
-          </span>
         </div>
 
         <div className="relative h-full overflow-y-auto">
@@ -205,7 +186,16 @@ export default function HubPage() {
                     className="text-[16px] font-normal text-[#6e6e6e]"
                     style={{ opacity: 0 }}
                   >
-                    So, he built multiple portfolios for you to explore.
+                    Feel free to poke around and explore his whiteboard{' '}
+                    <motion.button
+                      animate={eyeControls}
+                      onClick={handleAnnotationToggle}
+                      className="inline-flex items-center text-[#b0b0b0] hover:text-[#888] transition-colors cursor-pointer align-middle"
+                      style={{ originY: '50%' }}
+                      aria-label={annotationsVisible ? 'Hide annotations' : 'Show annotations'}
+                    >
+                      {annotationsVisible ? <EyeSlash size={15} /> : <Eye size={15} />}
+                    </motion.button>
                   </p>
                 </div>
 
@@ -216,7 +206,7 @@ export default function HubPage() {
                   style={{ opacity: 0, transform: 'translateY(4px)' }}
                 >
                   <p className="text-[16px] font-normal text-[#6e6e6e] whitespace-nowrap">
-                    Let him know which one is your favorite.
+                    You can find and contact him below.
                   </p>
                   <div className="flex items-center gap-6">
                     <a href="mailto:dhydn04@gmail.com" aria-label="Email"
@@ -244,36 +234,64 @@ export default function HubPage() {
                 className="flex flex-col gap-10"
                 style={{ opacity: 0, transform: 'translateY(4px)' }}
               >
-                <p className="text-[14px] font-medium text-[rgba(110,110,110,0.5)] whitespace-nowrap tracking-wide">
-                  SELECTED WORK
-                </p>
+                {/* Tabs */}
+                <div className="flex items-center gap-5">
+                  <button
+                    onClick={() => setActiveTab('work')}
+                    className={`text-[14px] font-medium tracking-wide whitespace-nowrap transition-colors ${
+                      activeTab === 'work'
+                        ? 'text-[rgba(110,110,110,0.8)]'
+                        : 'text-[rgba(110,110,110,0.35)] hover:text-[rgba(110,110,110,0.6)]'
+                    }`}
+                  >
+                    SELECTED WORK
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('experiments')}
+                    className={`text-[14px] font-medium tracking-wide whitespace-nowrap transition-colors ${
+                      activeTab === 'experiments'
+                        ? 'text-[rgba(110,110,110,0.8)]'
+                        : 'text-[rgba(110,110,110,0.35)] hover:text-[rgba(110,110,110,0.6)]'
+                    }`}
+                  >
+                    EXPERIMENTS
+                  </button>
+                </div>
 
-                <div className="flex flex-col gap-12">
-                  {projects.map((project) => (
-                    <div
-                      key={project.id}
-                      className="flex flex-col overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)] w-full"
-                    >
-                      {/* Full-bleed video */}
-                      <div className="aspect-[1518/1080] w-full overflow-hidden">
-                        <video
-                          autoPlay loop muted playsInline
-                          className="h-full w-full object-cover"
-                          src={project.video}
-                        />
-                      </div>
-                      {/* Caption bar */}
-                      <div className="flex items-center justify-between border-t border-[rgba(176,176,176,0.5)] px-3 py-3">
-                        <p className="text-[14px] text-[#6e6e6e] whitespace-nowrap">
-                          {project.description}
-                        </p>
-                        <div className="-rotate-45 shrink-0">
-                          <span className="text-[16px] text-[#6e6e6e]">→</span>
+                {activeTab === 'work' && (
+                  <div className="flex flex-col gap-12">
+                    {projects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="flex flex-col overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)] w-full"
+                      >
+                        {/* Full-bleed video */}
+                        <div className="aspect-[1518/1080] w-full overflow-hidden">
+                          <video
+                            autoPlay loop muted playsInline
+                            className="h-full w-full object-cover"
+                            src={project.video}
+                          />
+                        </div>
+                        {/* Caption bar */}
+                        <div className="flex items-center justify-between border-t border-[rgba(176,176,176,0.5)] px-3 py-3">
+                          <p className="text-[14px] text-[#6e6e6e] whitespace-nowrap">
+                            {project.description}
+                          </p>
+                          <div className="-rotate-45 shrink-0">
+                            <span className="text-[16px] text-[#6e6e6e]">→</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'experiments' && (
+                  <div className="flex flex-col gap-12">
+                    {/* Experiment cards will go here */}
+                  </div>
+                )}
               </div>
 
             </div>
