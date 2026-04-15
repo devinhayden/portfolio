@@ -122,7 +122,7 @@ export default function TrimblePage() {
               </h2>
               <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
                 As a UX Design Intern at Trimble, I worked across two distinct product domains — ProjectSight
-                (construction project management) and Trimble's global ecommerce platform. Across three projects,
+                (construction project management) and Trimble&apos;s global ecommerce platform. Across three projects,
                 I designed scalable components that clarified complex data, reduced cognitive load, and aligned
                 multiple teams during a web-framework migration.
               </p>
@@ -135,7 +135,7 @@ export default function TrimblePage() {
               <div className="flex flex-col gap-5">
                 <SectionLabel>Problem</SectionLabel>
                 <h2 className="text-[18px] font-semibold text-black leading-snug">
-                  Legacy components weren't built for the scale, complexity, or content structure of modern workflows.
+                  Legacy components weren&apos;t built for the scale, complexity, or content structure of modern workflows.
                 </h2>
                 <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
                   This showed up differently across teams, but despite different surfaces, the underlying design
@@ -222,7 +222,7 @@ export default function TrimblePage() {
                 </h3>
                 <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
                   My initial concept reordered active filters in real time to keep selected items visible —
-                  but engineers couldn't support dynamic list movement without performance issues. Instead of
+                  but engineers couldn&apos;t support dynamic list movement without performance issues. Instead of
                   removing the behavior entirely, I redesigned the interaction so reordering happened after
                   users applied changes. This maintained clarity and predictability while staying fully
                   buildable within engineering constraints.
@@ -245,7 +245,7 @@ export default function TrimblePage() {
                 <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
                   The new filtering UI needed to sit alongside other categories without overwhelming the layout
                   or introducing visual clutter. I created a narrower, modular component that aligned with
-                  Trimble's evolving design system and could scale to additional data types during the framework
+                  Trimble&apos;s evolving design system and could scale to additional data types during the framework
                   migration. This turned a one-off solution into a reusable building block other teams could adopt.
                 </p>
                 <Img
@@ -343,7 +343,7 @@ export default function TrimblePage() {
                   Crafting a responsive component that adapts across breakpoints.
                 </h3>
                 <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
-                  Designing for desktop and mobile wasn't the challenge — the transition between them was. I
+                  Designing for desktop and mobile wasn&apos;t the challenge — the transition between them was. I
                   created a responsive system that preserved clarity and hierarchy as the layout compressed,
                   adjusting spacing, touch targets, and visual balance to avoid overwhelming mobile users.
                   This transformed the pricing card from a resized component into one intentionally tailored
@@ -379,7 +379,7 @@ export default function TrimblePage() {
               {/* Subsection 1 — Legacy audit */}
               <div className="flex flex-col gap-4">
                 <h3 className="text-[15px] font-semibold text-black leading-snug">
-                  Recognizing that legacy subscription tables couldn't scale to technical content.
+                  Recognizing that legacy subscription tables couldn&apos;t scale to technical content.
                 </h3>
                 <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
                   Subscription-style tables worked for checkmarks, not long-form specs or industry differences.
@@ -437,7 +437,7 @@ export default function TrimblePage() {
                   behaviors — to keep tables readable and consistent across products. This work went beyond
                   visuals; it required restructuring the information architecture so technical specs, industry
                   tags, and long descriptions fit predictable patterns. The result was a comparison system
-                  that's easier to scan, easier to maintain, and ready to scale across future products.
+                  that&apos;s easier to scan, easier to maintain, and ready to scale across future products.
                 </p>
                 <Img
                   src="/projectFiles/trimble/trimble25.png"
