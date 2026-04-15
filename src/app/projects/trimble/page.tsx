@@ -1,15 +1,10 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Trimble — Devin Hayden',
 };
-
-function ImagePlaceholder({ aspectRatio = 'aspect-video' }: { aspectRatio?: string }) {
-  return (
-    <div className={`w-full ${aspectRatio} rounded-[4px] bg-[#f0ede8]`} />
-  );
-}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -37,6 +32,22 @@ function PullQuote({ children }: { children: React.ReactNode }) {
   );
 }
 
+function Img({
+  src,
+  alt,
+  aspect,
+}: {
+  src: string;
+  alt: string;
+  aspect: string;
+}) {
+  return (
+    <div className={`relative w-full ${aspect} overflow-hidden rounded-[4px]`}>
+      <Image src={src} alt={alt} fill className="object-cover" />
+    </div>
+  );
+}
+
 function ChapterOpener({
   number,
   label,
@@ -51,57 +62,14 @@ function ChapterOpener({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
-        <span className="text-[11px] font-medium text-[rgba(110,110,110,0.35)] tabular-nums">{number}</span>
+        <span className="text-[11px] font-medium text-[rgba(110,110,110,0.35)] tabular-nums shrink-0">
+          {number}
+        </span>
         <div className="h-px flex-1 bg-black/[0.06]" />
         <SectionLabel>{label}</SectionLabel>
       </div>
       <h2 className="text-[20px] font-semibold text-black leading-snug">{headline}</h2>
       <p className="text-[15px] text-[#6e6e6e] leading-relaxed">{intro}</p>
-    </div>
-  );
-}
-
-function Subsection({
-  headline,
-  body,
-  imageAspect = 'aspect-video',
-  twoCol = false,
-  caption,
-  pullQuote,
-  stats,
-}: {
-  headline: string;
-  body: string;
-  imageAspect?: string;
-  twoCol?: boolean;
-  caption: string;
-  pullQuote?: string;
-  stats?: { value: string; label: string }[];
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <h3 className="text-[15px] font-semibold text-black leading-snug">{headline}</h3>
-      <p className="text-[15px] text-[#6e6e6e] leading-relaxed">{body}</p>
-      {stats && (
-        <div className="flex gap-10 py-1">
-          {stats.map(s => (
-            <div key={s.value} className="flex flex-col gap-0.5">
-              <span className="text-[26px] font-semibold text-black leading-none">{s.value}</span>
-              <span className="text-[12px] text-[#b0b0b0]">{s.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {pullQuote && <PullQuote>{pullQuote}</PullQuote>}
-      {twoCol ? (
-        <div className="grid grid-cols-2 gap-3">
-          <ImagePlaceholder aspectRatio={imageAspect} />
-          <ImagePlaceholder aspectRatio={imageAspect} />
-        </div>
-      ) : (
-        <ImagePlaceholder aspectRatio={imageAspect} />
-      )}
-      <Caption>{caption}</Caption>
     </div>
   );
 }
@@ -113,7 +81,7 @@ export default function TrimblePage() {
         <div className="flex items-start justify-center px-6 pb-32 pt-14">
           <div className="flex w-[720px] shrink-0 flex-col gap-16">
 
-            {/* Back */}
+            {/* ── Back ── */}
             <Link
               href="/"
               className="text-[12px] font-medium tracking-widest text-[#b0b0b0] hover:text-[#888] transition-colors w-fit"
@@ -129,7 +97,6 @@ export default function TrimblePage() {
                   Designing adaptable, scalable UX patterns across project management and ecommerce
                 </h1>
               </div>
-
               <div className="grid grid-cols-4 gap-6">
                 {[
                   { label: 'ROLE', value: 'UX Design Intern' },
@@ -176,31 +143,25 @@ export default function TrimblePage() {
                   or business constraints.
                 </p>
               </div>
-
               <div className="flex flex-col gap-2">
                 {[
-                  {
-                    label: 'ProjectSight',
-                    text: "Users couldn't filter massive daily-report datasets by multiple categories (e.g., company + location).",
-                  },
-                  {
-                    label: 'Ecommerce',
-                    text: "Pricing cards didn't support global requirements or drive conversion.",
-                  },
-                  {
-                    label: 'Product Comparison',
-                    text: 'Subscription-style tables broke when applied to long technical specs and multi-industry content.',
-                  },
+                  { label: 'ProjectSight', text: "Users couldn't filter massive daily-report datasets by multiple categories (e.g., company + location)." },
+                  { label: 'Ecommerce', text: "Pricing cards didn't support global requirements or drive conversion." },
+                  { label: 'Product Comparison', text: 'Subscription-style tables broke when applied to long technical specs and multi-industry content.' },
                 ].map(({ label, text }) => (
                   <div key={label} className="flex items-baseline gap-4 rounded-[4px] bg-[#faf9f8] px-4 py-3.5">
-                    <span className="shrink-0 text-[11px] font-medium tracking-widest text-[rgba(110,110,110,0.5)] uppercase w-[120px]">{label}</span>
+                    <span className="shrink-0 text-[11px] font-medium tracking-widest text-[rgba(110,110,110,0.5)] uppercase w-[130px]">
+                      {label}
+                    </span>
                     <p className="text-[14px] text-[#6e6e6e] leading-snug">{text}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* ── Chapter 01: ProjectSight ── */}
+            {/* ══════════════════════════════════════════
+                CHAPTER 01 — PROJECTSIGHT
+            ══════════════════════════════════════════ */}
             <div className="flex flex-col gap-10 pt-4">
               <ChapterOpener
                 number="01"
@@ -209,7 +170,8 @@ export default function TrimblePage() {
                 intro="ProjectSight is Trimble's flagship project management tool, used by thousands of construction job sites around the globe. Field teams needed to filter 50–100+ job site locations for daily reporting, but the existing dropdown couldn't support multi-category filtering or large data sets."
               />
 
-              <div className="flex gap-10 py-2">
+              {/* Stat callouts */}
+              <div className="flex gap-10">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[28px] font-semibold text-black leading-none">50–100+</span>
                   <span className="text-[12px] text-[#b0b0b0]">job site locations to filter</span>
@@ -220,29 +182,86 @@ export default function TrimblePage() {
                 </div>
               </div>
 
-              <Subsection
-                headline="Exploring interaction patterns for data filtering in the context of construction project management."
-                body="I explored several interaction models for filtering — from simple dropdowns to multi-category panels — with the goal of reducing cognitive load while giving field teams more powerful ways to refine their data. Early iterations tried to let users filter within each data-type panel (like Labor or Equipment), but constant feedback with PMs showed this was over-engineering the workflow."
-                twoCol
-                imageAspect="aspect-[4/3]"
-                pullQuote="I was solving a deeper problem than the one actually blocking their efficiency."
-                caption="Early iterations of filtering within data panels — scrapped but reused component patterns for future iterations."
-              />
+              {/* Subsection 1 — Exploring interaction patterns */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Exploring interaction patterns for data filtering in the context of construction project management.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  I explored several interaction models for filtering — from simple dropdowns to multi-category
+                  panels — with the goal of reducing cognitive load while giving field teams more powerful ways
+                  to refine their data. Early iterations tried to let users filter within each data-type panel
+                  (like Labor or Equipment), but constant feedback with PMs showed this was over-engineering
+                  the workflow.
+                </p>
+                <PullQuote>
+                  I was solving a deeper problem than the one actually blocking their efficiency.
+                </PullQuote>
+                {/* 2-col: old component audit (left) + new interaction exploration (right) */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Img
+                    src="/projectFiles/trimble/Instagram post - 11.png"
+                    alt="Previous filter component audit showing UX issues"
+                    aspect="aspect-[4/5]"
+                  />
+                  <Img
+                    src="/projectFiles/trimble/trimble14.png"
+                    alt="New interaction exploration for multi-select filtering"
+                    aspect="aspect-[4/5]"
+                  />
+                </div>
+                <Caption>
+                  Left: audit of the previous filter component — wasted space, no clickable area, no chip fallback. Right: early interaction explorations for the redesigned filter.
+                </Caption>
+              </div>
 
-              <Subsection
-                headline="Preserving UX while navigating engineering constraints."
-                body="My initial concept reordered active filters in real time to keep selected items visible — but engineers couldn't support dynamic list movement without performance issues. Instead of removing the behavior entirely, I redesigned the interaction so reordering happened after users applied changes. This maintained clarity and predictability while staying fully buildable within engineering constraints."
-                caption="Updated interaction for sorting active filters that preserved UX while abiding by technical constraints from engineering."
-              />
+              {/* Subsection 2 — Engineering constraints */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Preserving UX while navigating engineering constraints.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  My initial concept reordered active filters in real time to keep selected items visible —
+                  but engineers couldn't support dynamic list movement without performance issues. Instead of
+                  removing the behavior entirely, I redesigned the interaction so reordering happened after
+                  users applied changes. This maintained clarity and predictability while staying fully
+                  buildable within engineering constraints.
+                </p>
+                <Img
+                  src="/projectFiles/trimble/trimble12.png"
+                  alt="Final multi-category filter UI with Company and Location panels"
+                  aspect="aspect-[16/9]"
+                />
+                <Caption>
+                  Final filter UI — stacked modular components for Company and Location, with reordering applied on confirm rather than in real time.
+                </Caption>
+              </div>
 
-              <Subsection
-                headline="Designing a compact component for a multi-category future."
-                body="The new filtering UI needed to sit alongside other categories without overwhelming the layout or introducing visual clutter. I created a narrower, modular component that aligned with Trimble's evolving design system and could scale to additional data types during the framework migration. This turned a one-off solution into a reusable building block other teams could adopt."
-                caption="A small, modular component responsible for one category of filtering — allowing multi-category filtering via multiple components used in conjunction."
-              />
+              {/* Subsection 3 — Compact component */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Designing a compact component for a multi-category future.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  The new filtering UI needed to sit alongside other categories without overwhelming the layout
+                  or introducing visual clutter. I created a narrower, modular component that aligned with
+                  Trimble's evolving design system and could scale to additional data types during the framework
+                  migration. This turned a one-off solution into a reusable building block other teams could adopt.
+                </p>
+                <Img
+                  src="/projectFiles/trimble/trimble15.png"
+                  alt="Modular filter component showing current and future scalability"
+                  aspect="aspect-[7/8]"
+                />
+                <Caption>
+                  A small, modular component responsible for one filter category — designed to stack with additional categories as the product scales.
+                </Caption>
+              </div>
             </div>
 
-            {/* ── Chapter 02: Ecommerce ── */}
+            {/* ══════════════════════════════════════════
+                CHAPTER 02 — ECOMMERCE
+            ══════════════════════════════════════════ */}
             <div className="flex flex-col gap-10 pt-4">
               <ChapterOpener
                 number="02"
@@ -251,31 +270,104 @@ export default function TrimblePage() {
                 intro="Trimble E-commerce serves global customers, driving sales and user acquisition for its growing product line. New pricing cards needed to support global tax laws, localization, discount logic, and responsiveness — while staying consistent with both the Global DS and Marketing Experience styling."
               />
 
-              <Subsection
-                headline="Rebuilding pricing hierarchy to communicate value clearly."
-                body="I reorganized the pricing cards to surface the elements users scan first: deal indicators, product name, price, and key actions. This required tightening the hierarchy so information remained scannable even as content density increased. The result was a layout that made value instantly recognizable across both web and mobile."
-                twoCol
-                imageAspect="aspect-[4/3]"
-                caption="After ~50 iterations of layout design, a hierarchy that hooks customers in, surfaces necessary info, and leaves them with the option to secure a deal on any product."
-              />
+              {/* Subsection 1 — Pricing hierarchy */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Rebuilding pricing hierarchy to communicate value clearly.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  I reorganized the pricing cards to surface the elements users scan first: deal indicators,
+                  product name, price, and key actions. This required tightening the hierarchy so information
+                  remained scannable even as content density increased. The result was a layout that made value
+                  instantly recognizable across both web and mobile.
+                </p>
+                {/* Before → After stacked */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2">
+                    <SectionLabel>Previous state</SectionLabel>
+                    <Img
+                      src="/projectFiles/trimble/trimble16.png"
+                      alt="Previous pricing card design"
+                      aspect="aspect-[4/5]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <SectionLabel>Redesign</SectionLabel>
+                    <Img
+                      src="/projectFiles/trimble/trimble17.png"
+                      alt="Redesigned pricing card with new hierarchy"
+                      aspect="aspect-[16/9]"
+                    />
+                  </div>
+                </div>
+                <Caption>
+                  After ~50 iterations of layout design — a hierarchy that hooks customers in, surfaces necessary info, and ends with a clear path to a deal.
+                </Caption>
+              </div>
 
-              <Subsection
-                headline="Designing for global localization and legal requirements."
-                body="With upcoming support for multiple languages, tax formats, and region-specific disclaimer text, the cards needed to flex without breaking. I built patterns that accommodated long strings, variable pricing structures, and legal copy — delivering a globally ready component earlier than planned. This prevented future rollout issues and ensured consistency across international markets."
-                pullQuote="Delivering a globally ready component earlier than planned prevented future rollout issues and ensured consistency across international markets."
-                caption="Working with Figma tokens and variables, localized components across multiple languages and currencies."
-              />
+              {/* Subsection 2 — Localization */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Designing for global localization and legal requirements.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  With upcoming support for multiple languages, tax formats, and region-specific disclaimer
+                  text, the cards needed to flex without breaking. I built patterns that accommodated long
+                  strings, variable pricing structures, and legal copy — delivering a globally ready component
+                  earlier than planned. This prevented future rollout issues and ensured consistency across
+                  international markets.
+                </p>
+                <PullQuote>
+                  Delivering a globally ready component earlier than planned prevented future rollout issues and ensured consistency across international markets.
+                </PullQuote>
+                <div className="grid grid-cols-2 gap-3">
+                  <Img
+                    src="/projectFiles/trimble/trimble18.png"
+                    alt="Pricing cards localized across five languages"
+                    aspect="aspect-[7/8]"
+                  />
+                  <Img
+                    src="/projectFiles/trimble/trimble19.png"
+                    alt="Figma tokens and variables for localized components"
+                    aspect="aspect-[7/8]"
+                  />
+                </div>
+                <Caption>
+                  Left: localized pricing cards across English, Portuguese, French, German, and Italian. Right: Figma token structure powering the localization system.
+                </Caption>
+              </div>
 
-              <Subsection
-                headline="Crafting a responsive component that adapts across breakpoints."
-                body="Designing for desktop and mobile wasn't the challenge — the transition between them was. I created a responsive system that preserved clarity and hierarchy as the layout compressed, adjusting spacing, touch targets, and visual balance to avoid overwhelming mobile users. This transformed the pricing card from a resized component into one intentionally tailored for every breakpoint."
-                twoCol
-                imageAspect="aspect-[3/4]"
-                caption="Testing responsiveness for pricing card components across web and mobile sizes to ensure no broken layouts or errors."
-              />
+              {/* Subsection 3 — Responsive */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Crafting a responsive component that adapts across breakpoints.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  Designing for desktop and mobile wasn't the challenge — the transition between them was. I
+                  created a responsive system that preserved clarity and hierarchy as the layout compressed,
+                  adjusting spacing, touch targets, and visual balance to avoid overwhelming mobile users.
+                  This transformed the pricing card from a resized component into one intentionally tailored
+                  for every breakpoint.
+                </p>
+                <div className="relative w-full aspect-video overflow-hidden rounded-[4px]">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="h-full w-full object-cover"
+                    src="/projectFiles/trimble/trimbleResponsiveness.mp4"
+                  />
+                </div>
+                <Caption>
+                  Pricing card responsiveness tested across web and mobile breakpoints — no broken layouts, adjusted touch targets and spacing at each size.
+                </Caption>
+              </div>
             </div>
 
-            {/* ── Chapter 03: Product Comparison ── */}
+            {/* ══════════════════════════════════════════
+                CHAPTER 03 — PRODUCT COMPARISON
+            ══════════════════════════════════════════ */}
             <div className="flex flex-col gap-10 pt-4">
               <ChapterOpener
                 number="03"
@@ -284,26 +376,78 @@ export default function TrimblePage() {
                 intro="Comparison tables are critical moments in the ecommerce flow — but Trimble's legacy subscription tables couldn't support the depth, nuance, or industry-specific details of hardware and technical products."
               />
 
-              <Subsection
-                headline="Recognizing that legacy subscription tables couldn't scale to technical content."
-                body="Subscription-style tables worked for checkmarks, not long-form specs or industry differences. As products grew more complex, the old tables broke — cluttered grids, empty cells, and 11-column scrolls. I identified this as a structural IA issue, not a visual one."
-                caption="Several audits of previous table components to identify issues and pain points."
-              />
+              {/* Subsection 1 — Legacy audit */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Recognizing that legacy subscription tables couldn't scale to technical content.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  Subscription-style tables worked for checkmarks, not long-form specs or industry differences.
+                  As products grew more complex, the old tables broke — cluttered grids, empty cells, and
+                  11-column scrolls. I identified this as a structural IA issue, not a visual one.
+                </p>
+                {/* 2-col: actual table (left) + annotated audit (right) */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Img
+                    src="/projectFiles/trimble/trimble22.png"
+                    alt="Legacy comparison table showing structural problems"
+                    aspect="aspect-[4/5]"
+                  />
+                  <Img
+                    src="/projectFiles/trimble/trimble23.png"
+                    alt="Annotated audit of the legacy table component"
+                    aspect="aspect-[4/5]"
+                  />
+                </div>
+                <Caption>
+                  Left: the legacy feature comparison table with cluttered rows and empty cells. Right: annotated audit identifying unnecessary tooltips, poor copy, and broken empty-state handling.
+                </Caption>
+              </div>
 
-              <Subsection
-                headline="Creating two new comparison patterns for different decision flows."
-                body="I introduced two scalable models: an updated traditional table for spec-heavy product families, and a card-based layout for cross-industry comparisons. The card layout let users filter by their industry, removing empty cells and reducing cognitive load."
-                twoCol
-                imageAspect="aspect-video"
-                pullQuote="Going beyond the initial requirements, I pitched a new component-type that allowed for scalability and easier integration with other product types."
-                caption="Two new comparison patterns — a spec table and a card-based layout for cross-industry filtering."
-              />
+              {/* Subsection 2 — Two new patterns */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Creating two new comparison patterns for different decision flows.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  I introduced two scalable models: an updated traditional table for spec-heavy product
+                  families, and a card-based layout for cross-industry comparisons. The card layout let users
+                  filter by their industry, removing empty cells and reducing cognitive load.
+                </p>
+                <PullQuote>
+                  Going beyond the initial requirements, I pitched a new component-type that allowed for scalability and easier integration with other product types.
+                </PullQuote>
+                <Img
+                  src="/projectFiles/trimble/trimble24.png"
+                  alt="Initial requirement vs additional card-based comparison component"
+                  aspect="aspect-[16/9]"
+                />
+                <Caption>
+                  Initial requirement (left): updated spec table. Additional component pitched (right): card-based layout with industry filtering to eliminate empty cells.
+                </Caption>
+              </div>
 
-              <Subsection
-                headline="Improving clarity through better information structure and responsive behavior."
-                body="I created clear content rules — like character limits, spec formatting, and interaction behaviors — to keep tables readable and consistent across products. This work went beyond visuals; it required restructuring the information architecture so technical specs, industry tags, and long descriptions fit predictable patterns. The result was a comparison system that's easier to scan, easier to maintain, and ready to scale across future products."
-                caption="Content and interaction guidelines annotated for developers and the marketing experience team to develop content for each product."
-              />
+              {/* Subsection 3 — Content guidelines */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-[15px] font-semibold text-black leading-snug">
+                  Improving clarity through better information structure and responsive behavior.
+                </h3>
+                <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
+                  I created clear content rules — like character limits, spec formatting, and interaction
+                  behaviors — to keep tables readable and consistent across products. This work went beyond
+                  visuals; it required restructuring the information architecture so technical specs, industry
+                  tags, and long descriptions fit predictable patterns. The result was a comparison system
+                  that's easier to scan, easier to maintain, and ready to scale across future products.
+                </p>
+                <Img
+                  src="/projectFiles/trimble/trimble25.png"
+                  alt="Content and interaction guidelines annotated for both table components"
+                  aspect="aspect-[16/9]"
+                />
+                <Caption>
+                  Annotated content and interaction guidelines for developers and the marketing experience team — character limits, spec formatting rules, and interaction behaviors for both components.
+                </Caption>
+              </div>
             </div>
 
             <Divider />
@@ -317,12 +461,11 @@ export default function TrimblePage() {
                 </h2>
                 <p className="text-[15px] text-[#6e6e6e] leading-relaxed">
                   Working across construction project management and global ecommerce taught me how to design
-                  patterns that stay clear under pressure — whether supporting 100+ data points or dense technical
-                  specs. Trimble pushed me to shape not just UI, but information architecture, content rules,
-                  and cross-team alignment.
+                  patterns that stay clear under pressure — whether supporting 100+ data points or dense
+                  technical specs. Trimble pushed me to shape not just UI, but information architecture,
+                  content rules, and cross-team alignment.
                 </p>
               </div>
-
               <div className="flex flex-col gap-8">
                 {[
                   {
