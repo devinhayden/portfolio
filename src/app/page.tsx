@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useAnimate, AnimatePresence, useAnimation } from 'motion/react';
 import { EnvelopeSimple, XLogo, LinkedinLogo, Eye, EyeSlash } from '@phosphor-icons/react';
+import Image from 'next/image';
 import { TegakiRenderer } from 'tegaki/react';
 import caveat from 'tegaki/fonts/caveat';
 import HubToolbar from '@/components/HubToolbar';
@@ -112,18 +113,18 @@ export default function HubPage() {
         <div className="relative h-full overflow-y-auto">
           <DrawingCanvas mode={toolMode} contentRef={contentRef} />
 
-          {/* ── Annotation overlay — natural size, crops on resize ── */}
-          <AnimatePresence>
+          {/* ── Annotation overlay — switches per tab, crops on resize ── */}
+          <AnimatePresence mode="wait">
             {annotationsVisible && (
               <motion.img
-                key="annotation-overlay"
-                src="/annotationOverlay.png"
+                key={`annotation-${activeTab}`}
+                src={activeTab === 'work' ? '/annotationOverlay.png' : '/annotationCover2.png'}
                 alt=""
                 aria-hidden
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
                 className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none z-10"
                 style={{ width: '1440px', maxWidth: 'none' }}
               />
@@ -288,8 +289,64 @@ export default function HubPage() {
                 )}
 
                 {activeTab === 'experiments' && (
-                  <div className="flex flex-col gap-12">
-                    {/* Experiment cards will go here */}
+                  <div className="flex gap-6 items-start">
+
+                    {/* ── Left column (main) ── */}
+                    <div className="flex flex-1 flex-col gap-[26px] min-w-0">
+
+                      {/* Agentic browser animation */}
+                      <div className="relative w-full aspect-[2453/1380] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
+                        <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/agenticBrowserAnimation.mov" />
+                      </div>
+
+                      {/* Experiential marketing — 2 landscape photos */}
+                      <div className="flex gap-6">
+                        <div className="relative flex-1 h-[197px] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
+                          <Image src="/projectFiles/experientialMarketing1.png" alt="Experiential marketing at NRG" fill className="object-cover" />
+                        </div>
+                        <div className="relative flex-1 h-[197px] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
+                          <Image src="/projectFiles/experientialMarketing2.png" alt="Experiential marketing at NRG" fill className="object-cover" />
+                        </div>
+                      </div>
+
+                      {/* Beacon cover */}
+                      <div className="relative w-full aspect-[2453/1380] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
+                        <Image src="/projectFiles/beaconCover.png" alt="Beacon" fill className="object-cover" />
+                      </div>
+
+                      {/* Comet + Fuser — 2 portrait items */}
+                      <div className="flex gap-6">
+                        <div className="relative flex-1 aspect-[1080/1350] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
+                          <Image src="/projectFiles/cometCover.png" alt="Comet" fill className="object-cover" />
+                        </div>
+                        <div className="relative flex-1 aspect-[1080/1350] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
+                          <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/fuserAnimation.mp4" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── Right column (narrow) ── */}
+                    <div className="flex flex-col gap-6 shrink-0 w-[193px]">
+
+                      {/* Concert photos — 3 stacked */}
+                      <div className="flex flex-col gap-3">
+                        {[
+                          { src: '/projectFiles/musicPhoto1.png', alt: 'Concert photography' },
+                          { src: '/projectFiles/musicPhoto2.png', alt: 'Concert photography' },
+                          { src: '/projectFiles/musicPhoto3.png', alt: 'Concert photography' },
+                        ].map(({ src, alt }) => (
+                          <div key={src} className="relative h-[125px] w-full overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
+                            <Image src={src} alt={alt} fill className="object-cover" />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Movie ticket animation */}
+                      <div className="relative w-full aspect-[193/419] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
+                        <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/movieTicketAnimation.mp4" />
+                      </div>
+                    </div>
+
                   </div>
                 )}
               </div>
