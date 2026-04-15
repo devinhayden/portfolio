@@ -186,15 +186,15 @@ export default function HubPage() {
                     className="text-[16px] font-normal text-[#6e6e6e]"
                     style={{ opacity: 0 }}
                   >
-                    Feel free to poke around and explore his whiteboard{' '}
+                    Feel free to poke around and explore his whiteboard
                     <motion.button
                       animate={eyeControls}
                       onClick={handleAnnotationToggle}
-                      className="inline-flex items-center text-[#b0b0b0] hover:text-[#888] transition-colors cursor-pointer align-middle"
+                      className="inline-flex items-center text-[#b0b0b0] hover:text-[#888] transition-colors cursor-pointer align-middle ml-[7px]"
                       style={{ originY: '50%' }}
                       aria-label={annotationsVisible ? 'Hide annotations' : 'Show annotations'}
                     >
-                      {annotationsVisible ? <EyeSlash size={15} /> : <Eye size={15} />}
+                      {annotationsVisible ? <EyeSlash size={18} /> : <Eye size={18} />}
                     </motion.button>
                   </p>
                 </div>
