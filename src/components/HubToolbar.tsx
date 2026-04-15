@@ -15,8 +15,8 @@ export default function HubToolbar({ mode, onModeChange }: HubToolbarProps) {
   const btnClass = (active: boolean) =>
     `flex items-center rounded-[6px] p-1.5 transition-all cursor-pointer ${
       active
-        ? 'bg-[#1a1a1a] text-white shadow-sm'
-        : 'text-[#1a1a1a] hover:bg-[#f0ece6]'
+        ? 'bg-[#1a1a1a] text-white'
+        : 'text-[#1a1a1a] hover:bg-[#f0ede8]'
     }`;
 
   return (
