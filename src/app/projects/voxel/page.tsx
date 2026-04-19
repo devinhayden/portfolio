@@ -49,12 +49,12 @@ function Img({ src, alt }: { src: string; alt: string }) {
 // — Video carousel —
 const PREVIEW_ITEMS = [
   {
-    src: '',
+    src: '/projectFiles/voxel/voxelProduct1.mp4',
     label: 'Agent Builder',
     description: 'Build structured call flows with modular blocks',
   },
   {
-    src: '',
+    src: '/projectFiles/voxel/voxelProduct2.mp4',
     label: 'EMR Variables',
     description: 'Insert EMR data directly into your script',
   },
