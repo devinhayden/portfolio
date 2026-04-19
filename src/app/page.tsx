@@ -19,6 +19,7 @@ const projects = [
     id: 'voxel',
     description: 'Intuitive and secure voice AI for healthcare clinics',
     video: '/projectFiles/voxelCoverAnimation.mp4',
+    href: '/projects/voxel',
   },
   {
     id: 'trimble',
