@@ -36,7 +36,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`${GeistMono.variable} ${GeistSans.variable} ${instrumentSerif.variable} ${caveat.variable} font-sans`}>
-        <main>{children}</main>
+        <div className="h-screen bg-[#f7f6f4] p-4 font-geist">
+          <main className="h-full">{children}</main>
+        </div>
       </body>
     </html>
   );

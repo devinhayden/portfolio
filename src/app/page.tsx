@@ -184,7 +184,7 @@ export default function HubPage() {
   return (
     <>
     <NotesOverlay isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
-    <div ref={scope} className="h-screen bg-[#f7f6f4] p-4 font-geist">
+    <div ref={scope} className="h-full">
       <div className="relative h-full rounded-[12px] bg-white overflow-hidden">
 
         <div id="toolbar" className="hidden md:block" style={{ opacity: 0 }}>
