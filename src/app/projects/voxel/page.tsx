@@ -66,7 +66,6 @@ function VideoCarousel() {
   const [active, setActive] = useState(0);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const startRef = useRef<number>(Date.now());
   const rafRef = useRef<number | null>(null);
   const pausedRef = useRef(false);
@@ -131,11 +130,8 @@ function VideoCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Video area — natural aspect ratio from first video */}
-      <div
-        className="relative w-full bg-[#f0eeec]"
-        style={aspectRatio ? { paddingBottom: `${(1 / aspectRatio) * 100}%` } : { aspectRatio: '16/9' }}
-      >
+      {/* Video area — 4:3 crop */}
+      <div className="relative w-full aspect-[4/3] bg-[#f0eeec]">
         {PREVIEW_ITEMS.map((item, i) => (
           <video
             key={i}
@@ -149,10 +145,6 @@ function VideoCarousel() {
             onLoadedMetadata={e => {
               const vid = e.currentTarget;
               durationsRef.current[i] = vid.duration || FALLBACK_INTERVAL / 1000;
-              // Set aspect ratio from first video
-              if (i === 0 && vid.videoWidth && vid.videoHeight) {
-                setAspectRatio(vid.videoWidth / vid.videoHeight);
-              }
             }}
           />
         ))}
