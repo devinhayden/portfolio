@@ -450,17 +450,17 @@ export default function HubPage() {
 
                   {/* Sticky notes */}
                   {[
-                    { color: '#fde047', right: 138, rotate: -7,  yIdle: 14, yHover: -10, delay: 0    },
-                    { color: '#5eead4', right: 72,  rotate:  6,  yIdle: 14, yHover: -14, delay: 0.05 },
-                    { color: '#e879f9', right: -6,  rotate: -4,  yIdle: 14, yHover: -8,  delay: 0.1  },
-                  ].map(({ color, right, rotate, yIdle, yHover, delay }, i) => (
+                    { color: '#fde047', right: 138, rotateIdle: -7,  rotateHover: -9,  yIdle: 46, yHover: 34, delay: 0    },
+                    { color: '#5eead4', right: 72,  rotateIdle:  6,  rotateHover:  9,  yIdle: 46, yHover: 36, delay: 0.06 },
+                    { color: '#e879f9', right: -6,  rotateIdle: -4,  rotateHover: -2,  yIdle: 46, yHover: 38, delay: 0.12 },
+                  ].map(({ color, right, rotateIdle, rotateHover, yIdle, yHover, delay }, i) => (
                     <motion.div
                       key={i}
                       className="absolute bottom-0 w-[66px] h-[74px] rounded-[2px]"
-                      style={{ backgroundColor: color, right, rotate }}
+                      style={{ backgroundColor: color, right }}
                       variants={{
-                        idle:    { y: yIdle, transition: { duration: 0.35, ease: 'easeOut' } },
-                        hovered: { y: yHover, transition: { delay, duration: 0.25, ease: 'easeOut' } },
+                        idle:    { y: yIdle, rotate: rotateIdle, transition: { duration: 0.4, ease: 'easeOut' } },
+                        hovered: { y: yHover, rotate: rotateHover, transition: { delay, duration: 0.3, ease: 'easeOut' } },
                       }}
                     />
                   ))}
