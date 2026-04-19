@@ -366,30 +366,17 @@ export default function NotesOverlay({
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="flex flex-col items-center gap-1.5">
-                    <p className="text-[17px] font-medium text-[#1e1e1e]">What should we call you?</p>
-                    <p className="text-[13px] text-[#aaa]">Your name will appear on the notes you leave.</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      autoFocus
-                      type="text"
-                      value={nameInput}
-                      maxLength={32}
-                      onChange={e => setNameInput(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleNameSubmit(); }}
-                      placeholder="Your name"
-                      className="bg-transparent border-b border-[#ccc] text-[14px] text-[#1e1e1e] placeholder-[#ccc] outline-none py-1 w-48 text-center"
-                      spellCheck={false}
-                    />
-                    <button
-                      onClick={handleNameSubmit}
-                      disabled={!nameInput.trim()}
-                      className="text-[16px] text-[#aaa] hover:text-[#444] transition-colors duration-150 disabled:opacity-30"
-                    >
-                      →
-                    </button>
-                  </div>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={nameInput}
+                    maxLength={32}
+                    onChange={e => setNameInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleNameSubmit(); }}
+                    placeholder="What should we call you?"
+                    className="bg-transparent border-b border-[#ccc] text-[14px] text-[#1e1e1e] placeholder-[#ccc] outline-none py-1 w-64 text-center"
+                    spellCheck={false}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -438,6 +425,7 @@ export default function NotesOverlay({
                         {isOwn && (
                           <button
                             className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-black/10 hover:bg-black/20 text-[#1e1e1e]/50 hover:text-[#1e1e1e] opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center justify-center text-[13px] leading-none"
+                            onPointerDown={e => e.stopPropagation()}
                             onClick={() => handleDeleteNote(note.id, note.session_token)}
                           >
                             ×
@@ -463,8 +451,8 @@ export default function NotesOverlay({
 
                         {/* Author name tag */}
                         <div className="absolute bottom-0 left-0 right-0 px-3 py-1.5">
-                          <p className="text-[10px] text-[#1e1e1e]/40 truncate">
-                            — {note.author_name || 'Anonymous'}
+                          <p className="text-[10px] text-[#1e1e1e]/40 truncate uppercase tracking-wide">
+                            {note.author_name || 'Anonymous'}
                           </p>
                         </div>
                       </motion.div>
@@ -534,8 +522,8 @@ export default function NotesOverlay({
 
                     {/* Author name preview on pending note */}
                     <div className="absolute bottom-0 left-0 right-0 px-3 py-1.5">
-                      <p className="text-[10px] text-[#1e1e1e]/40 truncate">
-                        — {userName || 'Anonymous'}
+                      <p className="text-[10px] text-[#1e1e1e]/40 truncate uppercase tracking-wide">
+                        {userName || 'Anonymous'}
                       </p>
                     </div>
                   </motion.div>
