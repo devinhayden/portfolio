@@ -23,7 +23,7 @@ function Img({ src, alt, aspect }: { src: string; alt: string; aspect: string })
 
 function KeyDecision({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 bg-[#fafaf8] rounded-[4px] px-5 py-4 border-l-2 border-[#c22222]">
+    <div className="flex flex-col gap-2 bg-[#fafaf8] px-5 py-4 border-l-2 border-[#c22222]">
       <p className="text-[11px] font-semibold tracking-widest text-[#c22222] uppercase">Key Decision</p>
       <p className="text-[15px] text-[#1e1e1e] leading-relaxed">{children}</p>
     </div>
@@ -145,7 +145,7 @@ export default function TrimblePage() {
 
             {/* Hero */}
             <div className="flex flex-col gap-8">
-              <p className="text-[24px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
+              <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                 Designing adaptable, scalable UX patterns across project management and ecommerce
               </p>
               <div className="relative w-full aspect-video overflow-hidden rounded-[4px]">
@@ -300,7 +300,7 @@ export default function TrimblePage() {
             </div>
 
             {/* Interested to learn more */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 bg-[#fafaf8] border border-[rgba(176,176,176,0.4)] rounded-[6px] px-6 py-5">
               <SectionLabel>Interested to learn more?</SectionLabel>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
                 I&apos;d love to walk through my design process more in-depth and highlight the decisions I made. Please reach out if you want to see a full case study!
