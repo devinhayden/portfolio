@@ -160,7 +160,7 @@ export default function VoxelPage() {
                   </p>
                 </div>
                 <KeyDecision>
-                  Proposing EMR integration mid-build was a scope risk. But a script with no patient context would have broken trust on every call. It wasn't a feature add. It was the product.
+                  Proposing EMR integration mid-build was a scope risk. But a script with no patient context would have broken trust on every call. It wasn&apos;t a feature add. It was the product.
                 </KeyDecision>
               </div>
 
@@ -176,7 +176,7 @@ export default function VoxelPage() {
                   </p>
                 </div>
                 <KeyDecision>
-                  Limiting configurability wasn't a compromise. It was a product decision that made the difference between something staff could use on day one and something that needed IT involvement.
+                  Limiting configurability wasn&apos;t a compromise. It was a product decision that made the difference between something staff could use on day one and something that needed IT involvement.
                 </KeyDecision>
               </div>
             </div>
