@@ -75,7 +75,7 @@ function VideoCarousel() {
   return (
     <div className="overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.4)]">
       {/* Video area — 4:3 crop */}
-      <div className="relative w-full aspect-[4/3] bg-[#f0eeec]">
+      <div className="relative w-full aspect-[1518/1080] bg-[#f0eeec]">
         {PREVIEW_ITEMS.map((item, i) => (
           <video
             key={i}
