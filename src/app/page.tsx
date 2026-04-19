@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Caveat } from 'next/font/google';
 import { motion, useAnimate, AnimatePresence } from 'motion/react';
 import { EnvelopeSimple, XLogo, LinkedinLogo } from '@phosphor-icons/react';
 import Image from 'next/image';
@@ -9,6 +10,9 @@ import { TegakiRenderer } from 'tegaki/react';
 import caveat from 'tegaki/fonts/caveat';
 import HubToolbar from '@/components/HubToolbar';
 import DrawingCanvas, { type ToolMode } from '@/components/DrawingCanvas';
+import NotesOverlay from '@/components/NotesOverlay';
+
+const caveatFont = Caveat({ subsets: ['latin'], weight: ['400'] });
 
 const projects = [
   {
@@ -24,12 +28,66 @@ const projects = [
   },
 ];
 
+const FOLD = 7;
+const NOTE_COLOR = '#fde047';
+
+function StickyNoteLink({ onOpen }: { onOpen: () => void }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <>
+      <span
+        className="relative inline-block cursor-pointer"
+        style={{ perspective: '200px' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={onOpen}
+      >
+      {/* Note background — corner clipped */}
+      <span
+        className="absolute rounded-[2px]"
+        style={{
+          inset: '0px -4px',
+          backgroundColor: NOTE_COLOR,
+          clipPath: `polygon(0 0, 100% 0, 100% calc(100% - ${FOLD}px), calc(100% - ${FOLD}px) 100%, 0 100%)`,
+        }}
+      />
+      {/* Shadow under fold */}
+      <span
+        className="absolute"
+        style={{
+          bottom: 0, right: -4,
+          width: FOLD, height: FOLD,
+          backgroundColor: 'rgba(0,0,0,0.12)',
+          clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+        }}
+      />
+      {/* Fold corner — lifts on hover */}
+      <motion.span
+        className="absolute"
+        style={{
+          bottom: 0, right: -4,
+          width: FOLD, height: FOLD,
+          backgroundColor: '#c9a800',
+          clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+          transformOrigin: '100% 100%',
+        }}
+        animate={hovered ? { rotateX: 35, rotateY: -35 } : { rotateX: 0, rotateY: 0 }}
+        transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+      />
+      <span className="relative text-[#1e1e1e]">leave a note</span>
+    </span>
+    </>
+  );
+}
+
 export default function HubPage() {
   const [scope, animate] = useAnimate();
   const [isWriting, setIsWriting] = useState(false);
   const [toolMode, setToolMode] = useState<ToolMode>('pointer');
   const [annotationsVisible, setAnnotationsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'work' | 'experiments'>('work');
+  const [notesOpen, setNotesOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const scribbleAnimRef = useRef<ReturnType<typeof animate> | null>(null);
 
@@ -72,7 +130,7 @@ export default function HubPage() {
 
       await Promise.all([
         animate('#scribble-path', { pathLength: 1 }, { duration: 1.0, ease: [0.4, 0, 0.2, 1] }),
-        animate('#indecisive',    { opacity: 0.4 },  { duration: 0.8, delay: 0.2 }),
+        animate('#chaotic',    { opacity: 0.4 },  { duration: 0.8, delay: 0.2 }),
       ]);
 
       setIsWriting(true);
@@ -88,6 +146,7 @@ export default function HubPage() {
         animate('#contact',  { opacity: 1, y: 0 }, { duration: 0.9, ease: 'easeOut', delay: 0.1 }),
         animate('#divider',  { opacity: 1 },       { duration: 0.9, ease: 'easeOut', delay: 0.2 }),
         animate('#projects', { opacity: 1, y: 0 }, { duration: 1.0, ease: 'easeOut', delay: 0.3 }),
+        animate('#footer',   { opacity: 1, y: 0 }, { duration: 1.0, ease: 'easeOut', delay: 0.45 }),
         animate('#toolbar',  { opacity: 1 }, { duration: 0.9, ease: 'easeOut', delay: 0.15 }),
       ]);
     };
@@ -102,6 +161,8 @@ export default function HubPage() {
   };
 
   return (
+    <>
+    <NotesOverlay isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
     <div ref={scope} className="h-screen bg-[#f7f6f4] p-4 font-geist">
       <div className="relative h-full rounded-[12px] bg-white overflow-hidden">
 
@@ -109,7 +170,7 @@ export default function HubPage() {
           <HubToolbar mode={toolMode} onModeChange={setToolMode} />
         </div>
 
-        <div className="relative h-full overflow-y-auto">
+        <div className="relative h-full overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
           <div className="hidden md:block">
             <DrawingCanvas mode={toolMode} contentRef={contentRef} />
           </div>
@@ -154,11 +215,12 @@ export default function HubPage() {
                         onMouseEnter={handleScribbleEnter}
                         onMouseLeave={handleScribbleLeave}
                       >
-                        <span id="indecisive" className="font-semibold">indecisive</span>
+                        <span id="chaotic" className="font-semibold">chaotic</span>
                         <svg
                           aria-hidden
                           className="pointer-events-none absolute left-0 top-[8px]"
-                          width="84" height="10" viewBox="0 0 84 10" fill="none"
+                          width="100%" height="10" viewBox="0 0 84 10" fill="none"
+                          preserveAspectRatio="none"
                         >
                           <motion.path
                             id="scribble-path"
@@ -178,7 +240,7 @@ export default function HubPage() {
                       onComplete={handleWritingComplete}
                       style={{ fontSize: '24px', color: '#c22222', lineHeight: 1, width: 'min(520px, 100%)' }}
                     >
-                      someone who loves to experiment.
+                      a designer who loves to experiment.
                     </TegakiRenderer>
                   </div>
 
@@ -192,29 +254,30 @@ export default function HubPage() {
                     <span className="md:hidden">Check out his workspace on desktop for more detail.</span>
                     {/* Desktop */}
                     <span className="hidden md:inline">
-                      Feel free to{' '}
+                      Check out his{' '}
+                      {/* Annotation toggle — "scribbles in the margins" */}
                       <button
                         onClick={handleAnnotationToggle}
                         className="relative inline cursor-pointer group"
                         aria-label={annotationsVisible ? 'Hide annotations' : 'Show annotations'}
                       >
-                        {/* Hover preview tint */}
-                        <span
-                          className="absolute rounded-[3px] bg-[#fef08a] opacity-0 group-hover:opacity-60 transition-opacity duration-150 pointer-events-none"
-                          style={{ inset: '0px -3px' }}
-                        />
-                        {/* Sweep fill */}
-                        <motion.span
-                          className="absolute rounded-[3px] bg-[#fde047] pointer-events-none"
-                          style={{ inset: '0px -3px', originX: 0 }}
-                          initial={{ scaleX: 0 }}
-                          animate={{ scaleX: annotationsVisible ? 1 : 0 }}
-                          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                        />
-                        {/* Text */}
-                        <span className="relative border-b border-dashed border-[#aaa]">highlight</span>
+                        <span className="relative inline-block">
+                          <span
+                            className="absolute rounded-[3px] bg-[#fef08a] opacity-0 group-hover:opacity-60 transition-opacity duration-150 pointer-events-none"
+                            style={{ inset: '0px -2px' }}
+                          />
+                          <motion.span
+                            className="absolute rounded-[3px] bg-[#fde047] pointer-events-none"
+                            style={{ inset: '0px -2px', originX: 0 }}
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: annotationsVisible ? 1 : 0 }}
+                            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                          />
+                          <span className="relative border-b border-dashed border-[#aaa]">scribbles</span>
+                        </span>
+                        {' in the margins'}
                       </button>
-                      {' '}his whiteboard notes.
+                      {'.'}
                     </span>
                   </p>
                 </div>
@@ -390,10 +453,25 @@ export default function HubPage() {
                 </AnimatePresence>
               </div>
 
+              {/* Footer */}
+              <div id="footer" className="flex flex-col pt-6 pb-8" style={{ opacity: 0, transform: 'translateY(4px)' }}>
+                <div className="h-px w-full bg-black/10" />
+                <div className="flex flex-col gap-3 pt-5">
+                  <p className={`${caveatFont.className} text-[22px] text-[#c22222] leading-none`}>
+                    Thanks for stopping by :)
+                  </p>
+                  <p className="text-[14px] text-[#aaa]">
+                    Feel free to <StickyNoteLink onOpen={() => setNotesOpen(true)} /> while you&apos;re here.
+                  </p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    </>
   );
 }
