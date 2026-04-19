@@ -51,17 +51,12 @@ const PREVIEW_ITEMS = [
   {
     src: '',
     label: 'Agent Builder',
-    description: 'Build custom call flows with drag-and-drop blocks',
+    description: 'Build structured call flows with modular blocks',
   },
   {
     src: '',
     label: 'EMR Variables',
-    description: 'Patient data flows directly into every script',
-  },
-  {
-    src: '',
-    label: 'Dashboard',
-    description: 'Monitor agent performance across all deployments',
+    description: 'Insert EMR data directly into your script',
   },
 ];
 
