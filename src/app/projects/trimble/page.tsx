@@ -149,7 +149,7 @@ export default function TrimblePage() {
             {/* Hero */}
             <div className="flex flex-col gap-8">
               <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                Designing adaptable, scalable UX patterns across project management and ecommerce
+                Designing adaptable, scalable components across construction project management and ecommerce
               </p>
               <div className="relative w-full aspect-video overflow-hidden rounded-[4px]">
                 <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/trimbleCoverAnimation.mp4" />
@@ -244,14 +244,14 @@ export default function TrimblePage() {
                 <Img src="/projectFiles/trimble/ecommerceSolution.png" alt="Localized pricing cards" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                    Designing for globalization and legal requirements.
+                    Designing for globalization and conversion.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                    I designed the pricing cards to handle multiple languages, tax formats, and region-specific disclaimers, preventing future rollout issues and ensuring the component worked globally from day one.
+                    I designed the pricing cards to handle multiple languages, tax formats, and customizations such as discount codes and promotional taglines — preventing future rollout issues and ensuring the component drove conversion globally from day one.
                   </p>
                 </div>
                 <KeyDecision>
-                  Building a single flexible card template with content slots for currency, tax, and legal copy meant one component could serve every market — rather than maintaining region-specific variants that would diverge over time.
+                  Building content slots for taglines and discount codes directly into the card template meant marketing could drive conversions without touching the design — while currency, tax, and legal copy stayed consistent across every market.
                 </KeyDecision>
               </div>
 
@@ -260,14 +260,14 @@ export default function TrimblePage() {
                 <Img src="/projectFiles/trimble/productcompareSolution.png" alt="Comparison table guidelines" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                    Improving clarity through better IA and responsive behavior.
+                    A structured comparison system built to scale across product lines.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                    I established content rules and restructured the information architecture so technical specs, industry tags, and descriptions followed predictable patterns, making the comparison system scannable, maintainable, and ready to scale.
+                    I designed a collapsible comparison table with grouped rows, product columns, and a &ldquo;Compare products&rdquo; selector — giving users control over what they see while keeping dense technical specs organized and scannable across any number of products.
                   </p>
                 </div>
                 <KeyDecision>
-                  Defining strict content hierarchy rules — category, feature name, tier value — meant editors couldn&apos;t break the layout with non-conforming content, making the system self-maintaining without constant design oversight.
+                  Using collapsible group rows meant users could focus on the spec categories that mattered to them — reducing cognitive load without removing information, and keeping the table usable even as product lines grew.
                 </KeyDecision>
               </div>
             </div>
