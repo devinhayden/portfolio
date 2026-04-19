@@ -1,8 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { useState, useEffect, useRef } from 'react';
 import TransitionLink from '@/components/TransitionLink';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -60,76 +59,21 @@ const PREVIEW_ITEMS = [
   },
 ];
 
-const FALLBACK_INTERVAL = 5000;
-
 function VideoCarousel() {
   const [active, setActive] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const startRef = useRef<number>(Date.now());
-  const rafRef = useRef<number | null>(null);
-  const pausedRef = useRef(false);
-  pausedRef.current = paused;
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-  const durationsRef = useRef<number[]>(PREVIEW_ITEMS.map(() => FALLBACK_INTERVAL));
-  const activeRef = useRef(active);
-  activeRef.current = active;
 
-  const getInterval = useCallback(() => durationsRef.current[activeRef.current] * 1000 || FALLBACK_INTERVAL, []);
-
-  const goTo = useCallback((idx: number) => {
-    setActive(idx);
-    setProgress(0);
-    startRef.current = Date.now();
-  }, []);
-
-  // Sync pause/play state to video elements
+  // Restart the active video from the beginning when switching tabs
   useEffect(() => {
-    videoRefs.current.forEach((vid, i) => {
-      if (!vid) return;
-      if (paused) {
-        vid.pause();
-      } else if (i === active) {
-        vid.play().catch(() => {});
-      }
-    });
-  }, [paused, active]);
-
-  useEffect(() => {
-    const tick = () => {
-      if (!pausedRef.current) {
-        const interval = getInterval();
-        const elapsed = Date.now() - startRef.current;
-        const pct = Math.min(elapsed / interval, 1);
-        setProgress(pct);
-        if (pct >= 1) {
-          setActive(a => {
-            const next = (a + 1) % PREVIEW_ITEMS.length;
-            startRef.current = Date.now();
-            return next;
-          });
-          setProgress(0);
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [getInterval]);
-
-  const handleMouseLeave = useCallback(() => {
-    setPaused(false);
-    // Offset start time so progress bar resumes from where it paused
-    const interval = getInterval();
-    startRef.current = Date.now() - progress * interval;
-  }, [progress, getInterval]);
+    const vid = videoRefs.current[active];
+    if (vid) {
+      vid.currentTime = 0;
+      vid.play().catch(() => {});
+    }
+  }, [active]);
 
   return (
-    <div
-      className="overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.4)]"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.4)]">
       {/* Video area — 4:3 crop */}
       <div className="relative w-full aspect-[4/3] bg-[#f0eeec]">
         {PREVIEW_ITEMS.map((item, i) => (
@@ -142,10 +86,6 @@ function VideoCarousel() {
             muted
             playsInline
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${i === active ? 'opacity-100' : 'opacity-0'}`}
-            onLoadedMetadata={e => {
-              const vid = e.currentTarget;
-              durationsRef.current[i] = vid.duration || FALLBACK_INTERVAL / 1000;
-            }}
           />
         ))}
       </div>
@@ -155,7 +95,7 @@ function VideoCarousel() {
         {PREVIEW_ITEMS.map((item, i) => (
           <button
             key={item.label}
-            onClick={() => goTo(i)}
+            onClick={() => setActive(i)}
             className={`relative flex-1 flex flex-col gap-1 px-4 py-3 text-left transition-colors duration-150 ${i > 0 ? 'border-l border-[rgba(176,176,176,0.4)]' : ''}`}
           >
             <p className={`text-[13px] font-medium transition-colors duration-150 ${i === active ? 'text-[#1e1e1e]' : 'text-[#aaa] hover:text-[#777]'}`}>
@@ -163,10 +103,7 @@ function VideoCarousel() {
             </p>
             <p className="text-[12px] text-[#bbb] leading-snug">{item.description}</p>
             {i === active && (
-              <motion.span
-                className="absolute bottom-0 left-0 h-[2px] bg-[#c22222]"
-                style={{ width: `${progress * 100}%` }}
-              />
+              <span className="absolute bottom-0 left-0 h-[2px] w-full bg-[#c22222]" />
             )}
           </button>
         ))}
