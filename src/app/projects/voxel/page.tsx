@@ -2,22 +2,12 @@
 
 import Image from 'next/image';
 import TransitionLink from '@/components/TransitionLink';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[12px] font-semibold tracking-widest text-[#c22222] uppercase">
       {children}
     </p>
-  );
-}
-
-function Img({ src, alt }: { src: string; alt: string }) {
-  return (
-    <div className="w-full overflow-hidden rounded-[4px]">
-      <Image src={src} alt={alt} width={0} height={0} sizes="100vw" className="w-full h-auto" />
-    </div>
   );
 }
 
@@ -30,104 +20,10 @@ function KeyDecision({ children }: { children: React.ReactNode }) {
   );
 }
 
-const TABS = [
-  {
-    label: 'ProjectSight',
-    text: "Users couldn't filter massive daily-report datasets by multiple categories (e.g., company + location).",
-    img: '/projectFiles/trimble/projectsightProblem.png',
-  },
-  {
-    label: 'Ecommerce',
-    text: "Pricing cards didn't support global requirements or drive conversion.",
-    img: '/projectFiles/trimble/ecommerceProblem.png',
-  },
-  {
-    label: 'Product Comparison',
-    text: 'Subscription-style tables broke when applied to long technical specs and multi-industry content.',
-    img: '/projectFiles/trimble/productcompareProblem.png',
-  },
-];
-
-const INTERVAL = 4000;
-
-function ProblemTabs() {
-  const [active, setActive] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const startRef = useRef<number>(Date.now());
-  const rafRef = useRef<number | null>(null);
-  const pausedRef = useRef(false);
-  pausedRef.current = paused;
-
-  const goTo = useCallback((idx: number) => {
-    setActive(idx);
-    setProgress(0);
-    startRef.current = Date.now();
-  }, []);
-
-  useEffect(() => {
-    const tick = () => {
-      if (!pausedRef.current) {
-        const elapsed = Date.now() - startRef.current;
-        const pct = Math.min(elapsed / INTERVAL, 1);
-        setProgress(pct);
-        if (pct >= 1) {
-          setActive(a => {
-            const next = (a + 1) % TABS.length;
-            startRef.current = Date.now();
-            return next;
-          });
-          setProgress(0);
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, []);
-
+function Placeholder() {
   return (
-    <div
-      className="flex flex-col gap-0 overflow-hidden rounded-[6px] border border-[rgba(176,176,176,0.4)]"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => { setPaused(false); startRef.current = Date.now() - progress * INTERVAL; }}
-    >
-      <div className="flex border-b border-[rgba(176,176,176,0.4)]">
-        {TABS.map((tab, i) => (
-          <button
-            key={tab.label}
-            onClick={() => goTo(i)}
-            className={`relative flex-1 px-4 py-3 text-left text-[13px] font-medium transition-colors duration-150 ${
-              i === active ? 'text-[#1e1e1e]' : 'text-[#aaa] hover:text-[#777]'
-            } ${i > 0 ? 'border-l border-[rgba(176,176,176,0.4)]' : ''}`}
-          >
-            {tab.label}
-            {i === active && (
-              <motion.span
-                className="absolute bottom-0 left-0 h-[2px] bg-[#c22222]"
-                style={{ width: `${progress * 100}%` }}
-              />
-            )}
-          </button>
-        ))}
-      </div>
-      <div className="relative overflow-hidden" style={{ minHeight: 220 }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={active}
-            className="flex flex-col gap-4 p-5"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-          >
-            <p className="text-[14px] text-[#1e1e1e] leading-relaxed">{TABS[active].text}</p>
-            <div className="relative w-full aspect-[16/7] overflow-hidden rounded-[4px]">
-              <Image src={TABS[active].img} alt={TABS[active].label} fill className="object-cover" />
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+    <div className="w-full aspect-video bg-[#f0eeec] rounded-[4px] flex items-center justify-center">
+      <p className="text-[12px] text-[#ccc] tracking-wide uppercase">Image coming soon</p>
     </div>
   );
 }
@@ -147,16 +43,16 @@ export default function VoxelPage() {
             {/* Hero */}
             <div className="flex flex-col gap-8">
               <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                Designing adaptable, scalable components across construction project management and ecommerce
+                Improving clinic workflows and patient outcomes with agentic voice AI
               </p>
               <div className="relative w-full aspect-video overflow-hidden rounded-[4px]">
-                <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/trimbleCoverAnimation.mp4" />
+                <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/voxelCoverAnimation.mp4" />
               </div>
               <div className="grid grid-cols-3 gap-6">
                 {[
-                  { label: 'ROLE', value: 'UX Design Intern' },
-                  { label: 'TIMELINE', value: 'May – Aug 2025' },
-                  { label: 'TOOLS', value: 'Figma, v0, Jira' },
+                  { label: 'ROLE',     value: 'Founding Designer' },
+                  { label: 'TIMELINE', value: 'Feb – May 2025' },
+                  { label: 'TOOLS',    value: 'Figma, v0, Notion' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex flex-col gap-1.5">
                     <p className="text-[11px] font-semibold tracking-widest text-[#ababab] uppercase">{label}</p>
@@ -164,17 +60,16 @@ export default function VoxelPage() {
                   </div>
                 ))}
               </div>
-
             </div>
 
             {/* Context */}
             <div className="flex flex-col gap-4">
               <SectionLabel>Context</SectionLabel>
               <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                Working across teams, domains, and product constraints can be messy.
+                A ten-week window to design, test, and ship a product from scratch.
               </p>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                Designing within two distinct product domains, project management tooling and global ecommerce, forced me to wear many hats. But there was one throughline I noticed across all teams.
+                As founding designer on Voxel, I worked within a startup incubator alongside one PM and two developers. The tight timeline compressed every stage of the design process — research, ideation, and iteration all had to happen in parallel rather than sequence.
               </p>
             </div>
 
@@ -183,12 +78,11 @@ export default function VoxelPage() {
               <SectionLabel>Problem</SectionLabel>
               <div className="border-l-2 border-[#c22222] pl-4">
                 <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                  Legacy components weren&apos;t built for the scale, complexity, or content structure of modern Trimble workflows.
+                  The bottleneck wasn&apos;t the technology. It was the workflow around it.
                 </p>
               </div>
-              <ProblemTabs />
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                Each product area had critical UX gaps rooted in the same issue: the components were not adaptable to evolving data models, user needs, or business constraints.
+                Front-desk staff at healthcare clinics were spending up to two hours after closing on manual reminder calls — cross-referencing patient data in their EMR, improvising scripts on the fly, and tracking no-shows in spreadsheets. The cognitive load wasn&apos;t just inefficient. It was burning out the people keeping clinics running.
               </p>
             </div>
 
@@ -196,51 +90,51 @@ export default function VoxelPage() {
             <div className="flex flex-col gap-16">
               <SectionLabel>Solutions</SectionLabel>
 
-              {/* 1 */}
+              {/* 1 — Agent builder */}
               <div className="flex flex-col gap-5">
-                <Img src="/projectFiles/trimble/projectsightSolution.png" alt="Modular filter component" />
+                <Placeholder />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                    A compact component for a multi-category future.
+                    A builder that felt familiar, not technical.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                    I created a modular component that aligned with Trimble&apos;s design system and could scale to additional data categories during their framework migration.
+                    Testing three interaction models made the tradeoffs clear. Flowcharts exposed too much system logic for non-technical staff. Linear forms were too rigid to cover the range of scenarios clinics needed. Drag-and-drop block builders hit the right balance — structured enough to guide users, flexible enough to reflect real workflows.
                   </p>
                 </div>
                 <KeyDecision>
-                  Prioritizing multi-select at the component level — not the filter group — kept the UI compact while giving teams room to scale to new data categories without a redesign.
+                  Choosing drag-and-drop over a more powerful flowchart model meant trading raw configurability for a much shallower learning curve — the right call for clinical coordinators with no technical background.
                 </KeyDecision>
               </div>
 
-              {/* 2 */}
+              {/* 2 — EMR variable blocks */}
               <div className="flex flex-col gap-5">
-                <Img src="/projectFiles/trimble/ecommerceSolution.png" alt="Localized pricing cards" />
+                <Placeholder />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                    Designing for globalization and conversion.
+                    Patient data, already in the script.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                    I designed the pricing cards to handle multiple languages, tax formats, and customizations such as discount codes and promotional taglines — preventing future rollout issues and ensuring the component drove conversion globally from day one.
+                    After shadowing clinic calls, the constant context-switching was unmistakable — staff pausing mid-call to pull up patient records in a separate system. EMR-linked variable blocks for patient name, appointment time, and visit type pulled live data directly into the call script, removing the platform switch entirely.
                   </p>
                 </div>
                 <KeyDecision>
-                  Building content slots for taglines and discount codes directly into the card template meant marketing could drive conversions without touching the design — while currency, tax, and legal copy stayed consistent across every market.
+                  Proposing EMR integration mid-build was a scope risk. But a script with no patient context would have undermined every call. The integration wasn&apos;t a feature — it was the product.
                 </KeyDecision>
               </div>
 
-              {/* 3 */}
+              {/* 3 — API abstraction */}
               <div className="flex flex-col gap-5">
-                <Img src="/projectFiles/trimble/productcompareSolution.png" alt="Comparison table guidelines" />
+                <Placeholder />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                    A structured comparison system built to scale across product lines.
+                    Hiding the complexity users didn&apos;t need.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                    I designed a collapsible comparison table with grouped rows, product columns, and a &ldquo;Compare products&rdquo; selector — giving users control over what they see while keeping dense technical specs organized and scannable across any number of products.
+                    The underlying voice API was capable but overwhelming. Exposing it directly to clinic staff would have killed adoption. I defined a constrained set of building blocks covering the vast majority of use cases — abstracting the technical layer entirely so coordinators could build and deploy agents without any engineering support.
                   </p>
                 </div>
                 <KeyDecision>
-                  Using collapsible group rows meant users could focus on the spec categories that mattered to them — reducing cognitive load without removing information, and keeping the table usable even as product lines grew.
+                  Limiting what users could configure wasn&apos;t a compromise — it was a product decision. A narrower interface meant clinic staff could onboard without training and ship agents that actually worked.
                 </KeyDecision>
               </div>
             </div>
@@ -251,18 +145,18 @@ export default function VoxelPage() {
               {[
                 {
                   number: '01',
-                  label: 'Small decisions shape large systems.',
-                  body: 'Designing filters, pricing, and comparison tables showed me how micro-choices like spacing, hierarchy, and character limits directly affect clarity and usability at scale.',
+                  label: '0→1 is more than design.',
+                  body: 'Working as founding designer meant writing pitch decks, running design critiques, and sitting in investor conversations. The design work was the vehicle — but the role was much broader.',
                 },
                 {
                   number: '02',
-                  label: 'Structure the content, not just the UI.',
-                  body: "Many challenges weren't visual problems but IA and content-design problems. Defining guidelines for table behavior, formatting, and copy length made the components more resilient.",
+                  label: 'Familiar patterns earn trust fast.',
+                  body: 'Drag-and-drop worked not because it was technically optimal, but because it felt immediately recognizable. Pattern familiarity reduced friction more than any onboarding flow could have.',
                 },
                 {
                   number: '03',
-                  label: 'Advocate past the requirements.',
-                  body: 'Several projects started as simple UI updates, but deeper investigation revealed broader UX issues. Pushing for better solutions led to patterns teams adopted beyond the original scope.',
+                  label: 'Scope creep can be the right call.',
+                  body: 'Proposing EMR integration wasn\'t in the original plan. Defending it with research turned a potential delay into the product\'s most valuable feature.',
                 },
               ].map(({ number, label, body }) => (
                 <div key={number} className="flex gap-5">
