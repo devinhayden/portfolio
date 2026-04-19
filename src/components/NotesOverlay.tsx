@@ -335,7 +335,7 @@ export default function NotesOverlay({
           {/* Floating panel */}
           <motion.div
             ref={panelRef}
-            className="fixed z-[60] overflow-hidden rounded-2xl shadow-2xl select-none"
+            className="fixed z-[60] overflow-hidden rounded-2xl shadow-2xl select-none font-geist"
             style={{
               left: '50%',
               top: '50%',
@@ -488,7 +488,7 @@ export default function NotesOverlay({
                             }
                             onKeyDown={handleKeyDown}
                             placeholder="Write something..."
-                            className="w-full h-full bg-transparent outline-none resize-none text-[15px] text-[#1e1e1e] placeholder-[#1e1e1e]/30 leading-snug font-sans"
+                            className="w-full h-full bg-transparent outline-none resize-none text-[15px] text-[#1e1e1e] placeholder-[#1e1e1e]/30 leading-snug font-geist"
                           />
                           {profanityError ? (
                             <p className="absolute bottom-6 left-3 text-[11px] text-red-600">
