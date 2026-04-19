@@ -136,8 +136,8 @@ export default function TrimblePage() {
   const [annotationsVisible, setAnnotationsVisible] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f7f6f4] p-4 font-geist">
-      <div className="relative min-h-full rounded-[12px] bg-white overflow-hidden">
+    <div className="h-screen bg-[#f7f6f4] p-4 font-geist">
+      <div className="relative h-full rounded-[12px] bg-white overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         <div className="flex items-start justify-center px-6 pb-32 pt-14">
           <div className="flex w-[600px] shrink-0 flex-col gap-14">
 
