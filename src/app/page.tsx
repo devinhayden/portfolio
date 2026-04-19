@@ -29,58 +29,7 @@ const projects = [
   },
 ];
 
-const FOLD = 7;
-const NOTE_COLOR = '#fde047';
 
-function StickyNoteLink({ onOpen }: { onOpen: () => void }) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <>
-      <span
-        className="relative inline-block cursor-pointer"
-        style={{ perspective: '200px' }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onClick={onOpen}
-      >
-      {/* Note background — corner clipped */}
-      <span
-        className="absolute rounded-[2px]"
-        style={{
-          inset: '0px -4px',
-          backgroundColor: NOTE_COLOR,
-          clipPath: `polygon(0 0, 100% 0, 100% calc(100% - ${FOLD}px), calc(100% - ${FOLD}px) 100%, 0 100%)`,
-        }}
-      />
-      {/* Shadow under fold */}
-      <span
-        className="absolute"
-        style={{
-          bottom: 0, right: -4,
-          width: FOLD, height: FOLD,
-          backgroundColor: 'rgba(0,0,0,0.12)',
-          clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
-        }}
-      />
-      {/* Fold corner — lifts on hover */}
-      <motion.span
-        className="absolute"
-        style={{
-          bottom: 0, right: -4,
-          width: FOLD, height: FOLD,
-          backgroundColor: '#c9a800',
-          clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
-          transformOrigin: '100% 100%',
-        }}
-        animate={hovered ? { rotateX: 35, rotateY: -35 } : { rotateX: 0, rotateY: 0 }}
-        transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
-      />
-      <span className="relative text-[#1e1e1e]">leave a note</span>
-    </span>
-    </>
-  );
-}
 
 export default function HubPage() {
   const [scope, animate] = useAnimate();
@@ -482,16 +431,40 @@ export default function HubPage() {
               </div>
 
               {/* Footer */}
-              <div id="footer" className="flex flex-col pt-6 pb-8" style={{ opacity: 0, transform: 'translateY(4px)' }}>
+              <div id="footer" className="flex flex-col gap-5 pt-6 pb-8" style={{ opacity: 0, transform: 'translateY(4px)' }}>
                 <div className="h-px w-full bg-black/10" />
-                <div className="flex flex-col gap-3 pt-5">
-                  <p className={`${caveatFont.className} text-[22px] text-[#c22222] leading-none`}>
-                    Thanks for stopping by :)
-                  </p>
-                  <p className="text-[14px] text-[#aaa]">
-                    Feel free to <StickyNoteLink onOpen={() => setNotesOpen(true)} /> while you&apos;re here.
-                  </p>
-                </div>
+                <motion.div
+                  className="relative cursor-pointer overflow-hidden rounded-[6px] border border-[rgba(176,176,176,0.4)] px-6 py-5 select-none"
+                  style={{ minHeight: 96 }}
+                  onClick={() => setNotesOpen(true)}
+                  whileHover="hovered"
+                  initial="idle"
+                >
+                  {/* Text */}
+                  <div className="flex flex-col gap-2 max-w-[60%]">
+                    <p className={`${caveatFont.className} text-[22px] text-[#c22222] leading-none`}>
+                      Thanks for stopping by :)
+                    </p>
+                    <p className="text-[14px] text-[#aaa]">Feel free to leave a note while you&apos;re here</p>
+                  </div>
+
+                  {/* Sticky notes */}
+                  {[
+                    { color: '#fde047', right: 138, rotate: -7,  yIdle: 14, yHover: -10, delay: 0    },
+                    { color: '#5eead4', right: 72,  rotate:  6,  yIdle: 14, yHover: -14, delay: 0.05 },
+                    { color: '#e879f9', right: -6,  rotate: -4,  yIdle: 14, yHover: -8,  delay: 0.1  },
+                  ].map(({ color, right, rotate, yIdle, yHover, delay }, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute bottom-0 w-[66px] h-[74px] rounded-[2px]"
+                      style={{ backgroundColor: color, right, rotate }}
+                      variants={{
+                        idle:    { y: yIdle, transition: { duration: 0.35, ease: 'easeOut' } },
+                        hovered: { y: yHover, transition: { delay, duration: 0.25, ease: 'easeOut' } },
+                      }}
+                    />
+                  ))}
+                </motion.div>
               </div>
 
             </div>
