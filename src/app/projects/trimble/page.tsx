@@ -217,12 +217,13 @@ export default function TrimblePage() {
             </div>
 
             {/* Solutions */}
-            <div className="flex flex-col gap-10">
+            <div className="flex flex-col gap-12">
               <SectionLabel>Solutions</SectionLabel>
 
-              {/* 1 — text left, image right */}
-              <div className="grid grid-cols-2 gap-6 items-start">
-                <div className="flex flex-col gap-3">
+              {/* 1 */}
+              <div className="flex flex-col gap-4">
+                <Img src="/projectFiles/trimble/trimble14.png" alt="Modular filter component" aspect="aspect-[1156/1323]" />
+                <div className="flex flex-col gap-2">
                   <p className="text-[16px] font-medium text-[#1e1e1e] leading-snug">
                     A compact component for a multi-category future.
                   </p>
@@ -230,13 +231,12 @@ export default function TrimblePage() {
                     I created a modular component that aligned with Trimble&apos;s design system and could scale to additional data categories during their framework migration.
                   </p>
                 </div>
-                <Img src="/projectFiles/trimble/trimble14.png" alt="Modular filter component" aspect="aspect-[1156/1323]" />
               </div>
 
-              {/* 2 — image left, text right */}
-              <div className="grid grid-cols-2 gap-6 items-start">
+              {/* 2 */}
+              <div className="flex flex-col gap-4">
                 <Img src="/projectFiles/trimble/trimble18.png" alt="Localized pricing cards" aspect="aspect-[1156/1323]" />
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                   <p className="text-[16px] font-medium text-[#1e1e1e] leading-snug">
                     Designing for globalization and legal requirements.
                   </p>
@@ -246,9 +246,10 @@ export default function TrimblePage() {
                 </div>
               </div>
 
-              {/* 3 — text left, image right */}
-              <div className="grid grid-cols-2 gap-6 items-start">
-                <div className="flex flex-col gap-3">
+              {/* 3 */}
+              <div className="flex flex-col gap-4">
+                <Img src="/projectFiles/trimble/trimble22.png" alt="Comparison table guidelines" aspect="aspect-[1080/1350]" />
+                <div className="flex flex-col gap-2">
                   <p className="text-[16px] font-medium text-[#1e1e1e] leading-snug">
                     Improving clarity through better IA and responsive behavior.
                   </p>
@@ -256,7 +257,6 @@ export default function TrimblePage() {
                     I established content rules and restructured the information architecture so technical specs, industry tags, and descriptions followed predictable patterns, making the comparison system scannable, maintainable, and ready to scale.
                   </p>
                 </div>
-                <Img src="/projectFiles/trimble/trimble22.png" alt="Comparison table guidelines" aspect="aspect-[1080/1350]" />
               </div>
             </div>
 
