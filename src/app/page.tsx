@@ -434,7 +434,7 @@ export default function HubPage() {
               <div id="footer" className="flex flex-col gap-5 pt-6 pb-8" style={{ opacity: 0, transform: 'translateY(4px)' }}>
                 <div className="h-px w-full bg-black/10" />
                 <motion.div
-                  className="relative cursor-pointer overflow-hidden rounded-[6px] border border-[rgba(176,176,176,0.4)] px-6 py-5 select-none"
+                  className="relative cursor-pointer overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.4)] px-6 py-5 select-none"
                   style={{ minHeight: 96 }}
                   onClick={() => setNotesOpen(true)}
                   whileHover="hovered"
