@@ -373,7 +373,7 @@ export default function NotesOverlay({
                     maxLength={32}
                     onChange={e => setNameInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleNameSubmit(); }}
-                    placeholder="What should we call you?"
+                    placeholder="Enter your name!"
                     className="bg-transparent border-b border-[#ccc] text-[14px] text-[#1e1e1e] placeholder-[#ccc] outline-none py-1 w-64 text-center"
                     spellCheck={false}
                   />
