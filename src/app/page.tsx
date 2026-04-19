@@ -5,12 +5,12 @@ import { Caveat } from 'next/font/google';
 import { motion, useAnimate, AnimatePresence } from 'motion/react';
 import { EnvelopeSimple, XLogo, LinkedinLogo } from '@phosphor-icons/react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { TegakiRenderer } from 'tegaki/react';
 import caveat from 'tegaki/fonts/caveat';
 import HubToolbar from '@/components/HubToolbar';
 import DrawingCanvas, { type ToolMode } from '@/components/DrawingCanvas';
 import NotesOverlay from '@/components/NotesOverlay';
+import { useNavigate } from '@/components/PageTransitionWrapper';
 
 const caveatFont = Caveat({ subsets: ['latin'], weight: ['400'] });
 
@@ -86,6 +86,7 @@ export default function HubPage() {
   const [scope, animate] = useAnimate();
   const [isWriting, setIsWriting] = useState(false);
   const [skipIntro, setSkipIntro] = useState(false);
+  const navigate = useNavigate();
   const [toolMode, setToolMode] = useState<ToolMode>('pointer');
   const [annotationsVisible, setAnnotationsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'work' | 'experiments'>('work');
@@ -255,17 +256,20 @@ export default function HubPage() {
                       </span>
                     </p>
 
-                    <TegakiRenderer
-                      font={caveat}
-                      time={skipIntro
-                        ? { mode: 'uncontrolled', playing: false, speed: 4.5, initialTime: 9999 }
-                        : { mode: 'uncontrolled', playing: isWriting, speed: 4.5, initialTime: 0 }
-                      }
-                      onComplete={handleWritingComplete}
-                      style={{ fontSize: '24px', color: '#c22222', lineHeight: 1, width: 'min(520px, 100%)' }}
-                    >
-                      a designer who loves to experiment.
-                    </TegakiRenderer>
+                    {skipIntro ? (
+                      <span style={{ fontSize: '24px', color: '#c22222', lineHeight: 1, width: 'min(520px, 100%)', fontFamily: `${caveatFont.style.fontFamily}, cursive`, display: 'block' }}>
+                        a designer who loves to experiment.
+                      </span>
+                    ) : (
+                      <TegakiRenderer
+                        font={caveat}
+                        time={{ mode: 'uncontrolled', playing: isWriting, speed: 4.5, initialTime: 0 }}
+                        onComplete={handleWritingComplete}
+                        style={{ fontSize: '24px', color: '#c22222', lineHeight: 1, width: 'min(520px, 100%)' }}
+                      >
+                        a designer who loves to experiment.
+                      </TegakiRenderer>
+                    )}
                   </div>
 
                   {/* Subtext */}
@@ -398,7 +402,7 @@ export default function HubPage() {
                         </div>
                       );
                       return project.href ? (
-                        <Link key={project.id} href={project.href}>{Card}</Link>
+                        <button key={project.id} onClick={() => navigate(project.href!)} className="text-left w-full">{Card}</button>
                       ) : (
                         <div key={project.id}>{Card}</div>
                       );

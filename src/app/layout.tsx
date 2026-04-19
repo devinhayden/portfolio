@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
 import { Instrument_Serif, Caveat } from 'next/font/google';
+import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import './globals.css';
 
 const instrumentSerif = Instrument_Serif({
@@ -37,7 +38,9 @@ export default function RootLayout({
       </head>
       <body className={`${GeistMono.variable} ${GeistSans.variable} ${instrumentSerif.variable} ${caveat.variable} font-sans`}>
         <div className="h-screen bg-[#f7f6f4] p-4 font-geist">
-          <main className="h-full">{children}</main>
+          <PageTransitionWrapper>
+            <main className="h-full">{children}</main>
+          </PageTransitionWrapper>
         </div>
       </body>
     </html>

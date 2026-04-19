@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
+import TransitionLink from '@/components/TransitionLink';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -140,9 +140,9 @@ export default function TrimblePage() {
           <div className="flex w-[600px] shrink-0 flex-col gap-14">
 
             {/* Back */}
-            <Link href="/" className="text-[12px] font-semibold tracking-widest text-[#9a9a9a] hover:text-[#777] transition-colors w-fit uppercase">
+            <TransitionLink href="/" className="text-[12px] font-semibold tracking-widest text-[#9a9a9a] hover:text-[#777] transition-colors w-fit uppercase">
               ← Back
-            </Link>
+            </TransitionLink>
 
             {/* Hero */}
             <div className="flex flex-col gap-8">
