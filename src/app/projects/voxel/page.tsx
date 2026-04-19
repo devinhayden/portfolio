@@ -60,16 +60,23 @@ const PREVIEW_ITEMS = [
   },
 ];
 
-const PREVIEW_INTERVAL = 5000;
+const FALLBACK_INTERVAL = 5000;
 
 function VideoCarousel() {
   const [active, setActive] = useState(0);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const startRef = useRef<number>(Date.now());
   const rafRef = useRef<number | null>(null);
   const pausedRef = useRef(false);
   pausedRef.current = paused;
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const durationsRef = useRef<number[]>(PREVIEW_ITEMS.map(() => FALLBACK_INTERVAL));
+  const activeRef = useRef(active);
+  activeRef.current = active;
+
+  const getInterval = useCallback(() => durationsRef.current[activeRef.current] * 1000 || FALLBACK_INTERVAL, []);
 
   const goTo = useCallback((idx: number) => {
     setActive(idx);
@@ -77,11 +84,24 @@ function VideoCarousel() {
     startRef.current = Date.now();
   }, []);
 
+  // Sync pause/play state to video elements
+  useEffect(() => {
+    videoRefs.current.forEach((vid, i) => {
+      if (!vid) return;
+      if (paused) {
+        vid.pause();
+      } else if (i === active) {
+        vid.play().catch(() => {});
+      }
+    });
+  }, [paused, active]);
+
   useEffect(() => {
     const tick = () => {
       if (!pausedRef.current) {
+        const interval = getInterval();
         const elapsed = Date.now() - startRef.current;
-        const pct = Math.min(elapsed / PREVIEW_INTERVAL, 1);
+        const pct = Math.min(elapsed / interval, 1);
         setProgress(pct);
         if (pct >= 1) {
           setActive(a => {
@@ -96,36 +116,46 @@ function VideoCarousel() {
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, []);
+  }, [getInterval]);
+
+  const handleMouseLeave = useCallback(() => {
+    setPaused(false);
+    // Offset start time so progress bar resumes from where it paused
+    const interval = getInterval();
+    startRef.current = Date.now() - progress * interval;
+  }, [progress, getInterval]);
 
   return (
     <div
       className="overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.4)]"
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => { setPaused(false); startRef.current = Date.now() - progress * PREVIEW_INTERVAL; }}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Video area */}
-      <div className="relative w-full aspect-video bg-[#f0eeec]">
-        {PREVIEW_ITEMS.map((item, i) =>
-          item.src ? (
-            <video
-              key={i}
-              src={item.src}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${i === active ? 'opacity-100' : 'opacity-0'}`}
-            />
-          ) : (
-            <div
-              key={i}
-              className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${i === active ? 'opacity-100' : 'opacity-0'}`}
-            >
-              <p className="text-[12px] text-[#ccc] tracking-wide uppercase">{item.label} — coming soon</p>
-            </div>
-          )
-        )}
+      {/* Video area — natural aspect ratio from first video */}
+      <div
+        className="relative w-full bg-[#f0eeec]"
+        style={aspectRatio ? { paddingBottom: `${(1 / aspectRatio) * 100}%` } : { aspectRatio: '16/9' }}
+      >
+        {PREVIEW_ITEMS.map((item, i) => (
+          <video
+            key={i}
+            ref={el => { videoRefs.current[i] = el; }}
+            src={item.src}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${i === active ? 'opacity-100' : 'opacity-0'}`}
+            onLoadedMetadata={e => {
+              const vid = e.currentTarget;
+              durationsRef.current[i] = vid.duration || FALLBACK_INTERVAL / 1000;
+              // Set aspect ratio from first video
+              if (i === 0 && vid.videoWidth && vid.videoHeight) {
+                setAspectRatio(vid.videoWidth / vid.videoHeight);
+              }
+            }}
+          />
+        ))}
       </div>
 
       {/* Tabs */}
