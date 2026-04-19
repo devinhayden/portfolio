@@ -10,11 +10,13 @@ const COLORS = ['#fde047', '#f9a8d4', '#86efac', '#93c5fd'];
 const ROTATIONS = [-4, -1.5, 1.5, 4];
 const NOTE_SIZE = 200;
 const SIDEBAR_H = 100;
-const NOTE_PEEK = 62;        // how many px of each sidebar note are visible
+const NOTE_PEEK = 62;
 const CANVAS_W = 5000;
 const CANVAS_H = 3000;
 const MAX_NOTES = 150;
 const MAX_CHARS = 200;
+const LS_NAME = 'portfolio_notes_name';
+const LS_TOKEN = 'portfolio_notes_token';
 
 interface Note {
   id: string;
@@ -23,6 +25,8 @@ interface Note {
   x: number;
   y: number;
   rotation: number;
+  author_name: string;
+  session_token: string;
   created_at: string;
 }
 
@@ -48,6 +52,39 @@ export default function NotesOverlay({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  // ── Session ───────────────────────────────────────────────────────────────
+  const [userName, setUserName] = useState<string | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+
+  // Check localStorage when overlay opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const storedName = localStorage.getItem(LS_NAME);
+    const storedToken = localStorage.getItem(LS_TOKEN);
+    if (storedName && storedToken) {
+      setUserName(storedName);
+      setSessionToken(storedToken);
+      setShowNamePrompt(false);
+    } else {
+      setShowNamePrompt(true);
+    }
+  }, [isOpen]);
+
+  const handleNameSubmit = () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed) return;
+    const token = crypto.randomUUID();
+    localStorage.setItem(LS_NAME, trimmed);
+    localStorage.setItem(LS_TOKEN, token);
+    setUserName(trimmed);
+    setSessionToken(token);
+    setNameInput('');
+    setShowNamePrompt(false);
+  };
+
+  // ── Canvas + notes state ──────────────────────────────────────────────────
   const [notes, setNotes] = useState<Note[]>([]);
   const [pending, setPending] = useState<PendingNote | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
@@ -61,6 +98,10 @@ export default function NotesOverlay({
   dragRef.current = drag;
   const pendingRef = useRef<PendingNote | null>(null);
   pendingRef.current = pending;
+  const userNameRef = useRef<string | null>(null);
+  userNameRef.current = userName;
+  const sessionTokenRef = useRef<string | null>(null);
+  sessionTokenRef.current = sessionToken;
   const tegakiKey = useRef(0);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
@@ -115,6 +156,17 @@ export default function NotesOverlay({
     return sx >= r.left && sx <= r.right && sy >= r.top && sy <= r.bottom - SIDEBAR_H;
   };
 
+  // ── Delete own note ───────────────────────────────────────────────────────
+
+  const handleDeleteNote = useCallback(async (noteId: string, noteToken: string) => {
+    if (!sessionTokenRef.current || noteToken !== sessionTokenRef.current) return;
+    await supabase
+      .from('sticky_notes')
+      .delete()
+      .eq('id', noteId)
+      .eq('session_token', sessionTokenRef.current);
+  }, []);
+
   // ── Sidebar drag ──────────────────────────────────────────────────────────
 
   const handleSidebarPointerDown = useCallback((e: React.PointerEvent, idx: number) => {
@@ -145,7 +197,6 @@ export default function NotesOverlay({
         rotation: (Math.random() - 0.5) * 10,
       });
     }
-    // If not over canvas: drag state clears, sidebar note snaps back naturally
     setDrag(null);
   }, []);
 
@@ -177,6 +228,8 @@ export default function NotesOverlay({
 
   const handleTegakiComplete = useCallback(async () => {
     const pn = pendingRef.current;
+    const name = userNameRef.current ?? 'Anonymous';
+    const token = sessionTokenRef.current ?? '';
     if (!pn) return;
 
     const { count } = await supabase
@@ -198,6 +251,8 @@ export default function NotesOverlay({
       x: Math.round(pn.x),
       y: Math.round(pn.y),
       rotation: pn.rotation,
+      author_name: name,
+      session_token: token,
     });
 
     setPending(null);
@@ -301,10 +356,48 @@ export default function NotesOverlay({
               ×
             </button>
 
+            {/* ── Name prompt screen ────────────────────── */}
+            <AnimatePresence>
+              {showNamePrompt && (
+                <motion.div
+                  className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-5 bg-[#f7f6f4]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex flex-col items-center gap-1.5">
+                    <p className="text-[17px] font-medium text-[#1e1e1e]">What should we call you?</p>
+                    <p className="text-[13px] text-[#aaa]">Your name will appear on the notes you leave.</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={nameInput}
+                      maxLength={32}
+                      onChange={e => setNameInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleNameSubmit(); }}
+                      placeholder="Your name"
+                      className="bg-transparent border-b border-[#ccc] text-[14px] text-[#1e1e1e] placeholder-[#ccc] outline-none py-1 w-48 text-center"
+                      spellCheck={false}
+                    />
+                    <button
+                      onClick={handleNameSubmit}
+                      disabled={!nameInput.trim()}
+                      className="text-[16px] text-[#aaa] hover:text-[#444] transition-colors duration-150 disabled:opacity-30"
+                    >
+                      →
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* ── Canvas area ──────────────────────────── */}
             <div
               className="absolute inset-0 overflow-hidden"
-              style={{ bottom: SIDEBAR_H, cursor: isPanning.current ? 'grabbing' : 'grab' }}
+              style={{ bottom: SIDEBAR_H, cursor: 'grab' }}
               onPointerDown={handleBgDown}
               onPointerMove={handleBgMove}
               onPointerUp={handleBgUp}
@@ -322,40 +415,61 @@ export default function NotesOverlay({
               >
                 {/* Placed notes from Supabase */}
                 <AnimatePresence>
-                  {notes.map(note => (
-                    <motion.div
-                      key={note.id}
-                      className="absolute rounded-[2px] shadow-md"
-                      style={{
-                        left: note.x,
-                        top: note.y,
-                        width: NOTE_SIZE,
-                        height: NOTE_SIZE,
-                        backgroundColor: note.color,
-                        rotate: note.rotation,
-                      }}
-                      initial={{ scale: 0.88, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.88, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
-                    >
-                      <div className="p-3 w-full h-full overflow-hidden">
-                        <TegakiRenderer
-                          font={caveatBundle}
-                          time={{ mode: 'controlled', unit: 'progress', value: 1 }}
-                          style={{
-                            fontSize: '15px',
-                            color: '#1e1e1e',
-                            lineHeight: '1.5',
-                            width: '100%',
-                            height: '100%',
-                          }}
-                        >
-                          {note.text}
-                        </TegakiRenderer>
-                      </div>
-                    </motion.div>
-                  ))}
+                  {notes.map(note => {
+                    const isOwn = !!sessionToken && note.session_token === sessionToken;
+                    return (
+                      <motion.div
+                        key={note.id}
+                        className="group absolute rounded-[2px] shadow-md pointer-events-auto"
+                        style={{
+                          left: note.x,
+                          top: note.y,
+                          width: NOTE_SIZE,
+                          height: NOTE_SIZE,
+                          backgroundColor: note.color,
+                          rotate: note.rotation,
+                        }}
+                        initial={{ scale: 0.88, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.88, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+                      >
+                        {/* Delete button — own notes only */}
+                        {isOwn && (
+                          <button
+                            className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-black/10 hover:bg-black/20 text-[#1e1e1e]/50 hover:text-[#1e1e1e] opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center justify-center text-[13px] leading-none"
+                            onClick={() => handleDeleteNote(note.id, note.session_token)}
+                          >
+                            ×
+                          </button>
+                        )}
+
+                        {/* Note content */}
+                        <div className="p-3 pb-6 w-full h-full overflow-hidden">
+                          <TegakiRenderer
+                            font={caveatBundle}
+                            time={{ mode: 'controlled', unit: 'progress', value: 1 }}
+                            style={{
+                              fontSize: '15px',
+                              color: '#1e1e1e',
+                              lineHeight: '1.5',
+                              width: '100%',
+                              height: '100%',
+                            }}
+                          >
+                            {note.text}
+                          </TegakiRenderer>
+                        </div>
+
+                        {/* Author name tag */}
+                        <div className="absolute bottom-0 left-0 right-0 px-3 py-1.5">
+                          <p className="text-[10px] text-[#1e1e1e]/40 truncate">
+                            — {note.author_name || 'Anonymous'}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
 
                 {/* Pending note (being edited / animating) */}
@@ -374,7 +488,7 @@ export default function NotesOverlay({
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
                   >
-                    <div className="p-3 w-full h-full relative overflow-hidden">
+                    <div className="p-3 pb-6 w-full h-full relative overflow-hidden">
                       {pending.phase === 'editing' && (
                         <>
                           <textarea
@@ -389,11 +503,11 @@ export default function NotesOverlay({
                             className="w-full h-full bg-transparent outline-none resize-none text-[15px] text-[#1e1e1e] placeholder-[#1e1e1e]/30 leading-snug font-sans"
                           />
                           {profanityError ? (
-                            <p className="absolute bottom-2 left-3 text-[11px] text-red-600">
+                            <p className="absolute bottom-6 left-3 text-[11px] text-red-600">
                               Let&apos;s keep it kind :)
                             </p>
                           ) : (
-                            <p className="absolute bottom-2 right-3 text-[10px] text-black/25 pointer-events-none">
+                            <p className="absolute bottom-6 right-3 text-[10px] text-black/25 pointer-events-none">
                               ↵ to place
                             </p>
                           )}
@@ -417,6 +531,13 @@ export default function NotesOverlay({
                         </TegakiRenderer>
                       )}
                     </div>
+
+                    {/* Author name preview on pending note */}
+                    <div className="absolute bottom-0 left-0 right-0 px-3 py-1.5">
+                      <p className="text-[10px] text-[#1e1e1e]/40 truncate">
+                        — {userName || 'Anonymous'}
+                      </p>
+                    </div>
                   </motion.div>
                 )}
               </div>
@@ -429,18 +550,13 @@ export default function NotesOverlay({
             />
 
             {/* ── Sidebar notes (fan) ───────────────────── */}
-            {/*
-              Position: absolute, relative to panel.
-              bottom: -(NOTE_SIZE - NOTE_PEEK) places each note so only NOTE_PEEK px
-              of its top is visible. Panel's overflow:hidden clips the rest.
-              whileHover y:-32 reveals more of the note.
-            */}
             <div
               className="absolute left-0 right-0 flex items-end justify-center pointer-events-none"
               style={{ gap: 20, bottom: -(NOTE_SIZE - NOTE_PEEK) }}
             >
               {COLORS.map((color, i) => {
                 const isDragging = drag?.colorIndex === i;
+                const disabled = showNamePrompt;
                 return (
                   <motion.div
                     key={color}
@@ -450,18 +566,18 @@ export default function NotesOverlay({
                       height: NOTE_SIZE,
                       backgroundColor: color,
                       rotate: ROTATIONS[i],
-                      opacity: isDragging ? 0.2 : 1,
-                      cursor: 'grab',
+                      opacity: isDragging ? 0.2 : disabled ? 0.4 : 1,
+                      cursor: disabled ? 'default' : 'grab',
                       touchAction: 'none',
                       transformOrigin: 'bottom center',
                     }}
                     whileHover={
-                      !isDragging
+                      !isDragging && !disabled
                         ? { y: -32, transition: { duration: 0.2, ease: [0.2, 0, 0, 1] } }
                         : {}
                     }
                     onPointerDown={e => {
-                      if (!isDragging) handleSidebarPointerDown(e, i);
+                      if (!isDragging && !disabled) handleSidebarPointerDown(e, i);
                     }}
                   />
                 );
