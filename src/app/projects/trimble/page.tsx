@@ -13,10 +13,10 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Img({ src, alt, aspect }: { src: string; alt: string; aspect: string }) {
+function Img({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className={`relative w-full ${aspect} overflow-hidden rounded-[4px]`}>
-      <Image src={src} alt={alt} fill className="object-cover" />
+    <div className="w-full overflow-hidden rounded-[4px]">
+      <Image src={src} alt={alt} width={0} height={0} sizes="100vw" className="w-full h-auto" />
     </div>
   );
 }
@@ -225,7 +225,7 @@ export default function TrimblePage() {
 
               {/* 1 */}
               <div className="flex flex-col gap-5">
-                <Img src="/projectFiles/trimble/projectsightSolution.png" alt="Modular filter component" aspect="aspect-[1156/1323]" />
+                <Img src="/projectFiles/trimble/projectsightSolution.png" alt="Modular filter component" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     A compact component for a multi-category future.
@@ -241,7 +241,7 @@ export default function TrimblePage() {
 
               {/* 2 */}
               <div className="flex flex-col gap-5">
-                <Img src="/projectFiles/trimble/ecommerceSolution.png" alt="Localized pricing cards" aspect="aspect-[1156/1323]" />
+                <Img src="/projectFiles/trimble/ecommerceSolution.png" alt="Localized pricing cards" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     Designing for globalization and legal requirements.
@@ -257,7 +257,7 @@ export default function TrimblePage() {
 
               {/* 3 */}
               <div className="flex flex-col gap-5">
-                <Img src="/projectFiles/trimble/productcompareSolution.png" alt="Comparison table guidelines" aspect="aspect-[1080/1350]" />
+                <Img src="/projectFiles/trimble/productcompareSolution.png" alt="Comparison table guidelines" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     Improving clarity through better IA and responsive behavior.
