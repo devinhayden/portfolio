@@ -133,8 +133,6 @@ function ProblemTabs() {
 }
 
 export default function TrimblePage() {
-  const [annotationsVisible, setAnnotationsVisible] = useState(false);
-
   return (
     <div className="h-screen bg-[#f7f6f4] p-4 font-geist">
       <div className="relative h-full rounded-[12px] bg-white overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
@@ -167,31 +165,6 @@ export default function TrimblePage() {
                 ))}
               </div>
 
-              {/* Annotation toggle */}
-              <p className="text-[15px] text-[#6e6e6e]">
-                Feel free to{' '}
-                <button
-                  onClick={() => setAnnotationsVisible(v => !v)}
-                  className="relative inline cursor-pointer group"
-                  aria-label={annotationsVisible ? 'Hide annotations' : 'Show annotations'}
-                >
-                  <span
-                    className="absolute rounded-[3px] bg-[#fef08a] opacity-0 group-hover:opacity-60 transition-opacity duration-150 pointer-events-none"
-                    style={{ inset: '0px -3px' }}
-                  />
-                  <motion.span
-                    className="absolute rounded-[3px] bg-[#fde047] pointer-events-none"
-                    style={{ inset: '0px -3px', originX: 0 }}
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: annotationsVisible ? 1 : 0 }}
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                  />
-                  <span className="relative text-[#1e1e1e] border-b border-dashed border-[#aaa]">
-                    {annotationsVisible ? 'hide' : 'show'}
-                  </span>
-                </button>
-                {' '}process annotations.
-              </p>
             </div>
 
             {/* Context */}
