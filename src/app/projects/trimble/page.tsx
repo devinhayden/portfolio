@@ -34,14 +34,17 @@ const TABS = [
   {
     label: 'ProjectSight',
     text: "Users couldn't filter massive daily-report datasets by multiple categories (e.g., company + location).",
+    img: '/projectFiles/trimble/projectsightProblem.png',
   },
   {
     label: 'Ecommerce',
     text: "Pricing cards didn't support global requirements or drive conversion.",
+    img: '/projectFiles/trimble/ecommerceProblem.png',
   },
   {
     label: 'Product Comparison',
     text: 'Subscription-style tables broke when applied to long technical specs and multi-industry content.',
+    img: '/projectFiles/trimble/productcompareProblem.png',
   },
 ];
 
@@ -119,8 +122,8 @@ function ProblemTabs() {
             transition={{ duration: 0.2, ease: 'easeInOut' }}
           >
             <p className="text-[14px] text-[#1e1e1e] leading-relaxed">{TABS[active].text}</p>
-            <div className="w-full aspect-[16/7] rounded-[4px] bg-[#f0eeec] flex items-center justify-center">
-              <p className="text-[12px] text-[#ccc] tracking-wide uppercase">Image coming soon</p>
+            <div className="relative w-full aspect-[16/7] overflow-hidden rounded-[4px]">
+              <Image src={TABS[active].img} alt={TABS[active].label} fill className="object-cover" />
             </div>
           </motion.div>
         </AnimatePresence>
