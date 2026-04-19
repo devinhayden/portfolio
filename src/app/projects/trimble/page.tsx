@@ -145,7 +145,7 @@ export default function TrimblePage() {
 
             {/* Hero */}
             <div className="flex flex-col gap-8">
-              <p className="text-[28px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
+              <p className="text-[24px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                 Designing adaptable, scalable UX patterns across project management and ecommerce
               </p>
               <div className="relative w-full aspect-video overflow-hidden rounded-[4px]">
@@ -194,7 +194,7 @@ export default function TrimblePage() {
             {/* Context */}
             <div className="flex flex-col gap-4">
               <SectionLabel>Context</SectionLabel>
-              <p className="text-[22px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
+              <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                 Working across teams, domains, and product constraints can be messy.
               </p>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
@@ -206,7 +206,7 @@ export default function TrimblePage() {
             <div className="flex flex-col gap-6">
               <SectionLabel>Problem</SectionLabel>
               <div className="border-l-2 border-[#c22222] pl-4">
-                <p className="text-[22px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
+                <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                   Legacy components weren&apos;t built for the scale, complexity, or content structure of modern Trimble workflows.
                 </p>
               </div>
@@ -224,7 +224,7 @@ export default function TrimblePage() {
               <div className="flex flex-col gap-5">
                 <Img src="/projectFiles/trimble/trimble14.png" alt="Modular filter component" aspect="aspect-[1156/1323]" />
                 <div className="flex flex-col gap-2">
-                  <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
+                  <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     A compact component for a multi-category future.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
@@ -240,7 +240,7 @@ export default function TrimblePage() {
               <div className="flex flex-col gap-5">
                 <Img src="/projectFiles/trimble/trimble18.png" alt="Localized pricing cards" aspect="aspect-[1156/1323]" />
                 <div className="flex flex-col gap-2">
-                  <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
+                  <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     Designing for globalization and legal requirements.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
@@ -256,7 +256,7 @@ export default function TrimblePage() {
               <div className="flex flex-col gap-5">
                 <Img src="/projectFiles/trimble/trimble22.png" alt="Comparison table guidelines" aspect="aspect-[1080/1350]" />
                 <div className="flex flex-col gap-2">
-                  <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
+                  <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     Improving clarity through better IA and responsive behavior.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
