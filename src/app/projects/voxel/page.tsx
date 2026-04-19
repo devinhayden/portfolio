@@ -1,5 +1,8 @@
 'use client';
 
+import Image from 'next/image';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'motion/react';
 import TransitionLink from '@/components/TransitionLink';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -35,10 +38,122 @@ function Reframe({ before, after }: { before: string; after: string }) {
   );
 }
 
-function Placeholder() {
+function Img({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="w-full aspect-video bg-[#f0eeec] rounded-[4px] flex items-center justify-center">
-      <p className="text-[12px] text-[#ccc] tracking-wide uppercase">Image coming soon</p>
+    <div className="w-full overflow-hidden rounded-[4px]">
+      <Image src={src} alt={alt} width={0} height={0} sizes="100vw" className="w-full h-auto" />
+    </div>
+  );
+}
+
+// — Video carousel —
+const PREVIEW_ITEMS = [
+  {
+    src: '',
+    label: 'Agent Builder',
+    description: 'Build custom call flows with drag-and-drop blocks',
+  },
+  {
+    src: '',
+    label: 'EMR Variables',
+    description: 'Patient data flows directly into every script',
+  },
+  {
+    src: '',
+    label: 'Dashboard',
+    description: 'Monitor agent performance across all deployments',
+  },
+];
+
+const PREVIEW_INTERVAL = 5000;
+
+function VideoCarousel() {
+  const [active, setActive] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const startRef = useRef<number>(Date.now());
+  const rafRef = useRef<number | null>(null);
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
+
+  const goTo = useCallback((idx: number) => {
+    setActive(idx);
+    setProgress(0);
+    startRef.current = Date.now();
+  }, []);
+
+  useEffect(() => {
+    const tick = () => {
+      if (!pausedRef.current) {
+        const elapsed = Date.now() - startRef.current;
+        const pct = Math.min(elapsed / PREVIEW_INTERVAL, 1);
+        setProgress(pct);
+        if (pct >= 1) {
+          setActive(a => {
+            const next = (a + 1) % PREVIEW_ITEMS.length;
+            startRef.current = Date.now();
+            return next;
+          });
+          setProgress(0);
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  return (
+    <div
+      className="overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.4)]"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => { setPaused(false); startRef.current = Date.now() - progress * PREVIEW_INTERVAL; }}
+    >
+      {/* Video area */}
+      <div className="relative w-full aspect-video bg-[#f0eeec]">
+        {PREVIEW_ITEMS.map((item, i) =>
+          item.src ? (
+            <video
+              key={i}
+              src={item.src}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${i === active ? 'opacity-100' : 'opacity-0'}`}
+            />
+          ) : (
+            <div
+              key={i}
+              className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${i === active ? 'opacity-100' : 'opacity-0'}`}
+            >
+              <p className="text-[12px] text-[#ccc] tracking-wide uppercase">{item.label} — coming soon</p>
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-t border-[rgba(176,176,176,0.4)]">
+        {PREVIEW_ITEMS.map((item, i) => (
+          <button
+            key={item.label}
+            onClick={() => goTo(i)}
+            className={`relative flex-1 flex flex-col gap-1 px-4 py-3 text-left transition-colors duration-150 ${i > 0 ? 'border-l border-[rgba(176,176,176,0.4)]' : ''}`}
+          >
+            <p className={`text-[13px] font-medium transition-colors duration-150 ${i === active ? 'text-[#1e1e1e]' : 'text-[#aaa] hover:text-[#777]'}`}>
+              {item.label}
+            </p>
+            <p className="text-[12px] text-[#bbb] leading-snug">{item.description}</p>
+            {i === active && (
+              <motion.span
+                className="absolute bottom-0 left-0 h-[2px] bg-[#c22222]"
+                style={{ width: `${progress * 100}%` }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -99,9 +214,9 @@ export default function VoxelPage() {
               </p>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { stat: '1–2 hrs', label: 'spent after closing on manual reminder calls every day' },
+                  { stat: '1–2 hrs',        label: 'spent after closing on manual reminder calls every day' },
                   { stat: 'Mid-call lookups', label: 'constantly flipping to their EMR during patient calls' },
-                  { stat: 'Spreadsheets', label: 'used to track no-shows because nothing else could' },
+                  { stat: 'Spreadsheets',    label: 'used to track no-shows because nothing else could' },
                 ].map(({ stat, label }) => (
                   <div key={stat} className="flex flex-col gap-2 bg-[#fafaf8] rounded-[4px] px-4 py-3 border border-[rgba(176,176,176,0.3)]">
                     <p className="text-[15px] font-semibold text-[#1e1e1e] leading-tight">{stat}</p>
@@ -128,13 +243,25 @@ export default function VoxelPage() {
               />
             </div>
 
-            {/* Solutions */}
+            {/* The Product */}
+            <div className="flex flex-col gap-6">
+              <SectionLabel>The Product</SectionLabel>
+              <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
+                A platform for building and deploying intelligent voice agents.
+              </p>
+              <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
+                Voxel lets healthcare clinics build custom AI call agents integrated directly with their EMR. Staff can shape call scripts, insert live patient data, and deploy agents without any technical support.
+              </p>
+              <VideoCarousel />
+            </div>
+
+            {/* Process */}
             <div className="flex flex-col gap-16">
-              <SectionLabel>Solutions</SectionLabel>
+              <SectionLabel>Process</SectionLabel>
 
               {/* 1 */}
               <div className="flex flex-col gap-5">
-                <Placeholder />
+                <Img src="/projectFiles/voxel/voxelSolution1.png" alt="Agent builder interface" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     A builder that felt familiar, not technical.
@@ -150,7 +277,7 @@ export default function VoxelPage() {
 
               {/* 2 */}
               <div className="flex flex-col gap-5">
-                <Placeholder />
+                <Img src="/projectFiles/voxel/voxelSolution2.png" alt="EMR variable blocks" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     Patient data, already in the script.
@@ -166,7 +293,7 @@ export default function VoxelPage() {
 
               {/* 3 */}
               <div className="flex flex-col gap-5">
-                <Placeholder />
+                <Img src="/projectFiles/voxel/voxelSolution3.png" alt="Simplified agent configuration" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                     Hiding the complexity users didn&apos;t need.
