@@ -149,7 +149,7 @@ export default function TrimblePage() {
               <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
                 Designing adaptable, scalable components across construction project management and ecommerce
               </p>
-              <div className="relative w-full aspect-video overflow-hidden rounded-[4px]">
+              <div className="relative w-full aspect-[1518/1080] overflow-hidden rounded-[4px]">
                 <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/trimbleCoverAnimation.mp4" />
               </div>
               <div className="grid grid-cols-3 gap-6">
