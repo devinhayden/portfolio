@@ -85,6 +85,7 @@ function StickyNoteLink({ onOpen }: { onOpen: () => void }) {
 export default function HubPage() {
   const [scope, animate] = useAnimate();
   const [isWriting, setIsWriting] = useState(false);
+  const [skipIntro, setSkipIntro] = useState(false);
   const [toolMode, setToolMode] = useState<ToolMode>('pointer');
   const [annotationsVisible, setAnnotationsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'work' | 'experiments'>('work');
@@ -124,6 +125,23 @@ export default function HubPage() {
   };
 
   useEffect(() => {
+    const hasPlayed = sessionStorage.getItem('intro_played') === '1';
+
+    if (hasPlayed) {
+      setSkipIntro(true);
+      writingDoneRef.current = true;
+      animate('#headline',     { opacity: 1, y: 0 }, { duration: 0 });
+      animate('#scribble-path',{ pathLength: 1 },     { duration: 0 });
+      animate('#chaotic',      { opacity: 0.4 },      { duration: 0 });
+      animate('#subtext',      { opacity: 1 },        { duration: 0 });
+      animate('#contact',      { opacity: 1, y: 0 }, { duration: 0 });
+      animate('#divider',      { opacity: 1 },        { duration: 0 });
+      animate('#projects',     { opacity: 1, y: 0 }, { duration: 0 });
+      animate('#footer',       { opacity: 1, y: 0 }, { duration: 0 });
+      animate('#toolbar',      { opacity: 1 },        { duration: 0 });
+      return;
+    }
+
     const seq = async () => {
       await new Promise<void>(r => setTimeout(r, 700));
 
@@ -150,6 +168,8 @@ export default function HubPage() {
         animate('#footer',   { opacity: 1, y: 0 }, { duration: 1.0, ease: 'easeOut', delay: 0.45 }),
         animate('#toolbar',  { opacity: 1 }, { duration: 0.9, ease: 'easeOut', delay: 0.15 }),
       ]);
+
+      sessionStorage.setItem('intro_played', '1');
     };
 
     seq();
@@ -237,7 +257,10 @@ export default function HubPage() {
 
                     <TegakiRenderer
                       font={caveat}
-                      time={{ mode: 'uncontrolled', playing: isWriting, speed: 4.5, initialTime: 0 }}
+                      time={skipIntro
+                        ? { mode: 'uncontrolled', playing: false, speed: 4.5, initialTime: 9999 }
+                        : { mode: 'uncontrolled', playing: isWriting, speed: 4.5, initialTime: 0 }
+                      }
                       onComplete={handleWritingComplete}
                       style={{ fontSize: '24px', color: '#c22222', lineHeight: 1, width: 'min(520px, 100%)' }}
                     >
