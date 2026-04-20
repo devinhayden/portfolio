@@ -163,6 +163,7 @@ export default function HubPage() {
                 src={activeTab === 'work' ? '/annotationOverlay.png' : '/annotationCover2.png'}
                 alt=""
                 aria-hidden
+                loading="lazy"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -383,31 +384,31 @@ export default function HubPage() {
 
                       {/* Agentic browser animation */}
                       <div className="relative w-full aspect-[2453/1380] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
-                        <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/agenticBrowserAnimation.mov" />
+                        <video autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover" src="/projectFiles/agenticBrowserAnimation.mov" />
                       </div>
 
                       {/* Experiential marketing — 2 landscape photos */}
                       <div className="flex gap-6">
                         <div className="relative flex-1 h-[197px] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
-                          <Image src="/projectFiles/experientialMarketing1.png" alt="Experiential marketing at NRG" fill className="object-cover" />
+                          <Image src="/projectFiles/experientialMarketing1.png" alt="Experiential marketing at NRG" fill sizes="(max-width: 768px) 50vw, 280px" className="object-cover" />
                         </div>
                         <div className="relative flex-1 h-[197px] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
-                          <Image src="/projectFiles/experientialMarketing2.png" alt="Experiential marketing at NRG" fill className="object-cover" />
+                          <Image src="/projectFiles/experientialMarketing2.png" alt="Experiential marketing at NRG" fill sizes="(max-width: 768px) 50vw, 280px" className="object-cover" />
                         </div>
                       </div>
 
                       {/* Beacon cover */}
                       <div className="relative w-full aspect-[2453/1380] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
-                        <Image src="/projectFiles/beaconCover.png" alt="Beacon" fill className="object-cover" />
+                        <Image src="/projectFiles/beaconCover.png" alt="Beacon" fill sizes="(max-width: 768px) 100vw, 390px" className="object-cover" />
                       </div>
 
                       {/* Comet + Fuser — 2 portrait items */}
                       <div className="flex gap-6">
                         <div className="relative flex-1 aspect-[1080/1350] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
-                          <Image src="/projectFiles/cometCover.png" alt="Comet" fill className="object-cover" />
+                          <Image src="/projectFiles/cometCover.png" alt="Comet" fill sizes="(max-width: 768px) 50vw, 190px" className="object-cover" />
                         </div>
                         <div className="relative flex-1 aspect-[1080/1350] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
-                          <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/fuserAnimation.mp4" />
+                          <video autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover" src="/projectFiles/fuserAnimation.mp4" />
                         </div>
                       </div>
                     </div>
@@ -423,14 +424,14 @@ export default function HubPage() {
                           { src: '/projectFiles/musicPhoto3.png', alt: 'Concert photography' },
                         ].map(({ src, alt }) => (
                           <div key={src} className="relative h-[125px] w-full overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
-                            <Image src={src} alt={alt} fill className="object-cover" />
+                            <Image src={src} alt={alt} fill sizes="(max-width: 768px) 33vw, 193px" className="object-cover" />
                           </div>
                         ))}
                       </div>
 
                       {/* Movie ticket animation */}
                       <div className="relative w-full aspect-[193/419] overflow-hidden rounded-[4px] border border-[rgba(176,176,176,0.5)]">
-                        <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/movieTicketAnimation.mp4" />
+                        <video autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover" src="/projectFiles/movieTicketAnimation.mp4" />
                       </div>
                     </div>
 
