@@ -18,7 +18,7 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: 'Devin Hayden | Product Designer',
+  title: 'Devin Hayden',
   description: 'Building intelligence with an understanding of real human rhythms.',
 };
 
