@@ -186,7 +186,7 @@ export default function HubPage() {
                         onMouseEnter={handleScribbleEnter}
                         onMouseLeave={handleScribbleLeave}
                       >
-                        <span id="chaotic" className="font-semibold">chaotic</span>
+                        <span id="chaotic" className="font-semibold">scattered</span>
                         <svg
                           aria-hidden
                           className="pointer-events-none absolute left-0 top-[8px]"
