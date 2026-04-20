@@ -26,7 +26,7 @@ function ReachOut() {
         onMouseLeave={() => setHovered(false)}
         className="underline underline-offset-2 decoration-[rgba(176,176,176,0.6)] hover:decoration-[#c22222] transition-colors duration-150"
       >
-        reach out
+        Reach out
       </button>
       <AnimatePresence>
         {hovered && (
@@ -35,10 +35,10 @@ function ReachOut() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 top-full mt-1.5 flex items-center gap-2 whitespace-nowrap rounded-[4px] bg-[#1e1e1e] px-2.5 py-1.5 pointer-events-none"
+            className="absolute left-0 top-full mt-1.5 flex items-center gap-2 whitespace-nowrap rounded-[4px] bg-white border border-[rgba(176,176,176,0.4)] px-2.5 py-1.5 pointer-events-none"
           >
-            <span className="text-[12px] text-white font-medium">{EMAIL}</span>
-            <span className="text-[11px] text-[#888]">{copied ? '✓ Copied' : 'Click to copy'}</span>
+            <span className="text-[12px] text-[#1e1e1e] font-medium">{EMAIL}</span>
+            <span className="text-[11px] text-[#aaa]">{copied ? '✓ Copied' : 'Click to copy'}</span>
           </motion.span>
         )}
       </AnimatePresence>
