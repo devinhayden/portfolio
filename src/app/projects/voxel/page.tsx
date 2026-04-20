@@ -2,7 +2,57 @@
 
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import TransitionLink from '@/components/TransitionLink';
+
+const EMAIL = 'dhayden@usc.edu';
+
+function CopyEmail() {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(EMAIL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="group flex items-center gap-2.5 w-fit"
+    >
+      <span className="text-[15px] text-[#1e1e1e] font-medium underline underline-offset-2 decoration-[rgba(176,176,176,0.6)] group-hover:decoration-[#c22222] transition-colors duration-150">
+        {EMAIL}
+      </span>
+      <AnimatePresence mode="wait">
+        {copied ? (
+          <motion.span
+            key="copied"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="text-[12px] font-medium text-[#c22222]"
+          >
+            Copied!
+          </motion.span>
+        ) : (
+          <motion.span
+            key="copy"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="text-[12px] font-medium text-[#aaa] group-hover:text-[#777] transition-colors duration-150"
+          >
+            Copy
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -296,8 +346,9 @@ export default function VoxelPage() {
             <div className="flex flex-col gap-3 bg-[#fafaf8] border border-[rgba(176,176,176,0.4)] rounded-[6px] px-6 py-5">
               <SectionLabel>Interested to learn more?</SectionLabel>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                I&apos;d love to walk through my design process more in-depth and highlight the decisions I made. Please reach out if you want to see a full case study!
+                I&apos;d love to walk through my design process in more depth. Reach out and I can share a full case study.
               </p>
+              <CopyEmail />
             </div>
 
           </div>
