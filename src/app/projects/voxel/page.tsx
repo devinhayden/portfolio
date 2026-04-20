@@ -7,8 +7,9 @@ import TransitionLink from '@/components/TransitionLink';
 
 const EMAIL = 'dhayden@usc.edu';
 
-function CopyEmail() {
+function ReachOut() {
   const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(EMAIL).then(() => {
@@ -18,39 +19,30 @@ function CopyEmail() {
   };
 
   return (
-    <button
-      onClick={handleCopy}
-      className="group flex items-center gap-2.5 w-fit"
-    >
-      <span className="text-[15px] text-[#1e1e1e] font-medium underline underline-offset-2 decoration-[rgba(176,176,176,0.6)] group-hover:decoration-[#c22222] transition-colors duration-150">
-        {EMAIL}
-      </span>
-      <AnimatePresence mode="wait">
-        {copied ? (
+    <span className="relative inline-block">
+      <button
+        onClick={handleCopy}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="underline underline-offset-2 decoration-[rgba(176,176,176,0.6)] hover:decoration-[#c22222] transition-colors duration-150"
+      >
+        reach out
+      </button>
+      <AnimatePresence>
+        {hovered && (
           <motion.span
-            key="copied"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
+            exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="text-[12px] font-medium text-[#c22222]"
+            className="absolute left-0 top-full mt-1.5 flex items-center gap-2 whitespace-nowrap rounded-[4px] bg-[#1e1e1e] px-2.5 py-1.5 pointer-events-none"
           >
-            Copied!
-          </motion.span>
-        ) : (
-          <motion.span
-            key="copy"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            className="text-[12px] font-medium text-[#aaa] group-hover:text-[#777] transition-colors duration-150"
-          >
-            Copy
+            <span className="text-[12px] text-white font-medium">{EMAIL}</span>
+            <span className="text-[11px] text-[#888]">{copied ? '✓ Copied' : 'Click to copy'}</span>
           </motion.span>
         )}
       </AnimatePresence>
-    </button>
+    </span>
   );
 }
 
@@ -346,9 +338,8 @@ export default function VoxelPage() {
             <div className="flex flex-col gap-3 bg-[#fafaf8] border border-[rgba(176,176,176,0.4)] rounded-[6px] px-6 py-5">
               <SectionLabel>Interested to learn more?</SectionLabel>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                I&apos;d love to walk through my design process in more depth. Reach out and I can share a full case study.
+                I&apos;d love to walk through my design process in more depth. <ReachOut /> and I can share a full case study.
               </p>
-              <CopyEmail />
             </div>
 
           </div>
