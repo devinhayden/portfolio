@@ -40,6 +40,15 @@ export default function HubPage() {
   const [annotationsVisible, setAnnotationsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'work' | 'experiments'>('work');
   const [notesOpen, setNotesOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const contentRef = useRef<HTMLDivElement>(null);
   const scribbleAnimRef = useRef<ReturnType<typeof animate> | null>(null);
 
@@ -133,7 +142,7 @@ export default function HubPage() {
 
   return (
     <>
-    <NotesOverlay isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
+    <NotesOverlay isOpen={notesOpen} onClose={() => setNotesOpen(false)} readOnly={isMobile} />
     <div ref={scope} className="h-full">
       <div className="relative h-full rounded-[12px] bg-white overflow-hidden">
 
@@ -445,7 +454,9 @@ export default function HubPage() {
                     <p className={`${caveatFont.className} text-[22px] text-[#c22222] leading-none`}>
                       Thanks for stopping by :)
                     </p>
-                    <p className="text-[14px] text-[#aaa]">Feel free to leave a note while you&apos;re here</p>
+                    <p className="text-[14px] text-[#aaa]">
+                    {isMobile ? 'See what others have left behind' : 'Feel free to leave a note while you\u2019re here'}
+                  </p>
                   </div>
 
                   {/* Sticky notes */}

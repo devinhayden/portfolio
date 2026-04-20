@@ -48,9 +48,11 @@ interface DragState {
 export default function NotesOverlay({
   isOpen,
   onClose,
+  readOnly = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  readOnly?: boolean;
 }) {
   // ── Session ───────────────────────────────────────────────────────────────
   const [userName, setUserName] = useState<string | null>(null);
@@ -58,9 +60,9 @@ export default function NotesOverlay({
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [nameInput, setNameInput] = useState('');
 
-  // Check localStorage when overlay opens
+  // Check localStorage when overlay opens (skip entirely in readOnly mode)
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || readOnly) return;
     const storedName = localStorage.getItem(LS_NAME);
     const storedToken = localStorage.getItem(LS_TOKEN);
     if (storedName && storedToken) {
@@ -70,7 +72,7 @@ export default function NotesOverlay({
     } else {
       setShowNamePrompt(true);
     }
-  }, [isOpen]);
+  }, [isOpen, readOnly]);
 
   const handleNameSubmit = () => {
     const trimmed = nameInput.trim();
@@ -113,13 +115,14 @@ export default function NotesOverlay({
       const panel = panelRef.current;
       if (!panel) return;
       const { width, height } = panel.getBoundingClientRect();
+      const sidebarH = readOnly ? 0 : SIDEBAR_H;
       setCanvasOffset({
         x: -(CANVAS_W / 2 - width / 2),
-        y: -(CANVAS_H / 2 - (height - SIDEBAR_H) / 2),
+        y: -(CANVAS_H / 2 - (height - sidebarH) / 2),
       });
     }, 50);
     return () => clearTimeout(id);
-  }, [isOpen]);
+  }, [isOpen, readOnly]);
 
   // Load notes + realtime
   useEffect(() => {
@@ -271,12 +274,13 @@ export default function NotesOverlay({
     if (!isPanning.current) return;
     const r = getPanelRect();
     if (!r) return;
-    const pw = r.width, ph = r.height - SIDEBAR_H;
+    const sidebarH = readOnly ? 0 : SIDEBAR_H;
+    const pw = r.width, ph = r.height - sidebarH;
     setCanvasOffset({
       x: Math.min(pw * 0.85, Math.max(-(CANVAS_W - pw * 0.15), panStart.current.ox + (e.clientX - panStart.current.x))),
       y: Math.min(ph * 0.85, Math.max(-(CANVAS_H - ph * 0.15), panStart.current.oy + (e.clientY - panStart.current.y))),
     });
-  }, []);
+  }, [readOnly]);
 
   const handleBgUp = useCallback(() => { isPanning.current = false; }, []);
 
@@ -284,12 +288,13 @@ export default function NotesOverlay({
     e.preventDefault();
     const r = getPanelRect();
     if (!r) return;
-    const pw = r.width, ph = r.height - SIDEBAR_H;
+    const sidebarH = readOnly ? 0 : SIDEBAR_H;
+    const pw = r.width, ph = r.height - sidebarH;
     setCanvasOffset(prev => ({
       x: Math.min(pw * 0.85, Math.max(-(CANVAS_W - pw * 0.15), prev.x - e.deltaX)),
       y: Math.min(ph * 0.85, Math.max(-(CANVAS_H - ph * 0.15), prev.y - e.deltaY)),
     }));
-  }, []);
+  }, [readOnly]);
 
   const handleClose = () => { setPending(null); setDrag(null); onClose(); };
 
@@ -384,7 +389,7 @@ export default function NotesOverlay({
             {/* ── Canvas area ──────────────────────────── */}
             <div
               className="absolute inset-0 overflow-hidden"
-              style={{ bottom: SIDEBAR_H, cursor: 'grab' }}
+              style={{ bottom: readOnly ? 0 : SIDEBAR_H, cursor: 'grab', touchAction: 'none' }}
               onPointerDown={handleBgDown}
               onPointerMove={handleBgMove}
               onPointerUp={handleBgUp}
@@ -531,46 +536,48 @@ export default function NotesOverlay({
               </div>
             </div>
 
-            {/* ── Sidebar strip ─────────────────────────── */}
-            <div
-              className="absolute bottom-0 left-0 right-0 border-t border-black/[0.07] pointer-events-none"
-              style={{ height: SIDEBAR_H, background: '#edeae7' }}
-            />
-
-            {/* ── Sidebar notes (fan) ───────────────────── */}
-            <div
-              className="absolute left-0 right-0 flex items-end justify-center pointer-events-none"
-              style={{ gap: 20, bottom: -(NOTE_SIZE - NOTE_PEEK) }}
-            >
-              {COLORS.map((color, i) => {
-                const isDragging = drag?.colorIndex === i;
-                const disabled = showNamePrompt;
-                return (
-                  <motion.div
-                    key={color}
-                    className="shrink-0 rounded-[2px] shadow-md pointer-events-auto"
-                    style={{
-                      width: NOTE_SIZE,
-                      height: NOTE_SIZE,
-                      backgroundColor: color,
-                      rotate: ROTATIONS[i],
-                      opacity: isDragging ? 0.2 : disabled ? 0.4 : 1,
-                      cursor: disabled ? 'default' : 'grab',
-                      touchAction: 'none',
-                      transformOrigin: 'bottom center',
-                    }}
-                    whileHover={
-                      !isDragging && !disabled
-                        ? { y: -32, transition: { duration: 0.2, ease: [0.2, 0, 0, 1] } }
-                        : {}
-                    }
-                    onPointerDown={e => {
-                      if (!isDragging && !disabled) handleSidebarPointerDown(e, i);
-                    }}
-                  />
-                );
-              })}
-            </div>
+            {/* ── Sidebar strip + fan (hidden in readOnly mode) ── */}
+            {!readOnly && (
+              <>
+                <div
+                  className="absolute bottom-0 left-0 right-0 border-t border-black/[0.07] pointer-events-none"
+                  style={{ height: SIDEBAR_H, background: '#edeae7' }}
+                />
+                <div
+                  className="absolute left-0 right-0 flex items-end justify-center pointer-events-none"
+                  style={{ gap: 20, bottom: -(NOTE_SIZE - NOTE_PEEK) }}
+                >
+                  {COLORS.map((color, i) => {
+                    const isDragging = drag?.colorIndex === i;
+                    const disabled = showNamePrompt;
+                    return (
+                      <motion.div
+                        key={color}
+                        className="shrink-0 rounded-[2px] shadow-md pointer-events-auto"
+                        style={{
+                          width: NOTE_SIZE,
+                          height: NOTE_SIZE,
+                          backgroundColor: color,
+                          rotate: ROTATIONS[i],
+                          opacity: isDragging ? 0.2 : disabled ? 0.4 : 1,
+                          cursor: disabled ? 'default' : 'grab',
+                          touchAction: 'none',
+                          transformOrigin: 'bottom center',
+                        }}
+                        whileHover={
+                          !isDragging && !disabled
+                            ? { y: -32, transition: { duration: 0.2, ease: [0.2, 0, 0, 1] } }
+                            : {}
+                        }
+                        onPointerDown={e => {
+                          if (!isDragging && !disabled) handleSidebarPointerDown(e, i);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </motion.div>
         </>
       )}
