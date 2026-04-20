@@ -153,7 +153,7 @@ export default function VoxelPage() {
                 Ten weeks to go from zero to a working product.
               </p>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                I worked as both designer and co-founder through a startup incubator alongside one PM and two developers. Research, design, and iteration were all happening in parallel. Every decision had to pull its weight.
+                I was the founding designer at a startup incubator, working alongside one PM and two developers. Research, design, and building were all happening at the same time, so every decision had to count.
               </p>
             </div>
 
@@ -161,10 +161,10 @@ export default function VoxelPage() {
             <div className="flex flex-col gap-6">
               <SectionLabel>Research</SectionLabel>
               <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                The same friction kept coming up across every conversation.
+                The same friction kept coming up in every conversation.
               </p>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                We talked to front-desk staff at local clinics to understand what the job actually looked like day to day. Three problems surfaced consistently, and none of their existing tools addressed any of them.
+                We talked to front-desk staff at local clinics to get a real sense of what their day looked like. Three things kept coming up, and none of their existing tools were doing anything about them.
               </p>
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -185,11 +185,11 @@ export default function VoxelPage() {
               <SectionLabel>Problem</SectionLabel>
               <div className="border-l-2 border-[#c22222] pl-4">
                 <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                  Front-desk staff juggle manual reminder calls and fragmented patient information, creating unnecessary workload and gaps in communication.
+                  Front-desk staff are spending hours on manual reminder calls while constantly context-switching to look up patient info mid-conversation.
                 </p>
               </div>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                Our initial instinct was to focus on reducing no-shows. But talking to staff made it clear the real issue was the cognitive load of the whole communication workflow. We shifted the problem frame entirely.
+                We went in thinking the problem was no-shows. Talking to staff made it clear the real pain was just how much cognitive overhead the whole communication workflow added to their day. That shifted everything.
               </p>
               <Reframe
                 before="How might we reduce no-show appointments by improving the consistency of patient reminders?"
@@ -201,10 +201,10 @@ export default function VoxelPage() {
             <div className="flex flex-col gap-6">
               <SectionLabel>The Product</SectionLabel>
               <p className="text-[20px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                A platform for building and deploying intelligent voice agents.
+                A platform for building and deploying AI voice agents.
               </p>
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                Voxel lets healthcare clinics build custom AI call agents integrated directly with their EMR. Staff can shape call scripts, insert live patient data, and deploy agents without any technical support.
+                Voxel lets clinics build custom call agents that connect directly to their EMR. Staff can write scripts, pull in live patient data, and deploy without needing any technical help.
               </p>
               <VideoCarousel />
             </div>
@@ -221,11 +221,11 @@ export default function VoxelPage() {
                     A builder that felt familiar, not technical.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                    We tested three ways to let clinics build their own AI agents. Flowcharts exposed too much system logic and made even simple scripts feel intimidating. Linear forms were too rigid to handle the range of scenarios clinics actually needed. Drag-and-drop block builders were the right call. Structured enough to guide users, flexible enough to handle real workflows.
+                    We tested three approaches: flowcharts, linear forms, and drag-and-drop blocks. Flowcharts felt like looking at a system diagram. Forms were too rigid for the variety of scenarios clinics actually deal with. Blocks hit the sweet spot — enough structure to guide someone, enough flexibility to handle real workflows.
                   </p>
                 </div>
                 <KeyDecision>
-                  Choosing drag-and-drop over a flowchart model meant giving up some configurability for a much shorter learning curve. For clinical staff without a technical background, that was the right trade.
+                  Going with drag-and-drop over a flowchart meant trading some configurability for a much shorter learning curve. For staff without any technical background, that was an easy call.
                 </KeyDecision>
               </div>
 
@@ -237,11 +237,11 @@ export default function VoxelPage() {
                     Patient data, already in the script.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                    Shadowing clinic calls made one thing immediately clear: staff were pausing mid-call to look things up in a separate system. EMR-linked variable blocks pulled live data directly into scripts. Patient name, appointment time, visit type — all there before the call even starts.
+                    Shadowing a few clinic calls made it obvious: staff were constantly pausing to flip over to their EMR mid-conversation. EMR variable blocks let us pull that data directly into the script — patient name, appointment time, visit type — so it&apos;s all there before the call even starts.
                   </p>
                 </div>
                 <KeyDecision>
-                  Proposing EMR integration mid-build was a scope risk. But a script with no patient context would have broken trust on every call. It wasn&apos;t a feature add. It was the product.
+                  Pushing for EMR integration mid-build was a real scope risk. But a script with no patient context would have felt generic on every call. It wasn&apos;t a nice-to-have — it was what made the product actually useful.
                 </KeyDecision>
               </div>
 
@@ -250,14 +250,14 @@ export default function VoxelPage() {
                 <Img src="/projectFiles/voxel/voxelSolution3.png" alt="Simplified agent configuration" />
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-medium text-[#1e1e1e] leading-snug tracking-tight">
-                    Hiding the complexity users didn&apos;t need.
+                    Hiding the complexity they didn&apos;t need.
                   </p>
                   <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
-                    The underlying Retell API had a lot of depth but was way too exposed for clinical staff. Working with the dev team, we unpacked the full data model and rebuilt it as a simplified set of building blocks. Coordinators could build and deploy agents without any engineering support.
+                    The Retell API had a lot going on under the hood — way too much to expose directly to clinic staff. Working with the devs, we mapped out the full data model and distilled it into a handful of building blocks. Coordinators could set up and launch agents on their own, no IT required.
                   </p>
                 </div>
                 <KeyDecision>
-                  Limiting configurability wasn&apos;t a compromise. It was a product decision that made the difference between something staff could use on day one and something that needed IT involvement.
+                  Pulling back on configurability wasn&apos;t a concession — it was the point. The difference between something staff could use on day one and something that needed an IT ticket was exactly how much we were willing to simplify.
                 </KeyDecision>
               </div>
             </div>
@@ -269,17 +269,17 @@ export default function VoxelPage() {
                 {
                   number: '01',
                   label: '0→1 is more than design work.',
-                  body: 'Working as founding designer meant writing pitch decks, running design critiques, and presenting to investors at LavaLab Demo Day. The design was the vehicle. The role was a lot bigger.',
+                  body: "Founding designer meant pitch decks, design critiques, and presenting to investors at LavaLab Demo Day. Design was the vehicle, but the role stretched well beyond it.",
                 },
                 {
                   number: '02',
-                  label: 'Familiar patterns earn trust fast.',
-                  body: "Drag-and-drop worked not because it was technically optimal but because it felt immediately recognizable. That familiarity reduced the learning curve more than any onboarding flow could have.",
+                  label: 'Familiar patterns earn trust quickly.',
+                  body: "Drag-and-drop worked because it felt like something people had already used. That recognition did more for the learning curve than any onboarding flow would have.",
                 },
                 {
                   number: '03',
-                  label: 'Research gives you the confidence to push scope.',
-                  body: "Proposing EMR integration wasn't in the original plan. The research backed it up. Defending it turned a potential delay into the product's most valuable feature.",
+                  label: 'Research gives you cover to push back.',
+                  body: "EMR integration wasn't part of the original scope. The research made the case for it, and having that foundation made it a lot easier to defend when it added complexity mid-build.",
                 },
               ].map(({ number, label, body }) => (
                 <div key={number} className="flex gap-5">
