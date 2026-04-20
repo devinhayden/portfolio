@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import TransitionLink from '@/components/TransitionLink';
 
-const EMAIL = 'dhayden@usc.edu';
+const EMAIL = 'dhydn04@gmail.com';
 
 function ReachOut() {
   const [copied, setCopied] = useState(false);
