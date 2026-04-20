@@ -14,7 +14,11 @@ function ReachOut() {
   const handleCopy = () => {
     navigator.clipboard.writeText(EMAIL).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setHovered(true);
+      setTimeout(() => {
+        setCopied(false);
+        setHovered(false);
+      }, 2000);
     });
   };
 
@@ -23,7 +27,7 @@ function ReachOut() {
       <button
         onClick={handleCopy}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseLeave={() => { if (!copied) setHovered(false); }}
         className="underline underline-offset-2 decoration-[rgba(176,176,176,0.6)] hover:decoration-[#c22222] transition-colors duration-150"
       >
         Reach out
@@ -35,7 +39,7 @@ function ReachOut() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 top-full mt-1.5 flex items-center gap-2 whitespace-nowrap rounded-[4px] bg-white border border-[rgba(176,176,176,0.4)] px-2.5 py-1.5 pointer-events-none"
+            className="absolute left-0 top-full mt-1.5 flex items-center gap-2 whitespace-nowrap rounded-[4px] bg-white border border-[rgba(176,176,176,0.4)] px-2.5 py-1.5 pointer-events-none z-10"
           >
             <span className="text-[12px] text-[#1e1e1e] font-medium">{EMAIL}</span>
             <span className="text-[11px] text-[#aaa]">{copied ? '✓ Copied' : 'Click to copy'}</span>
@@ -158,8 +162,8 @@ export default function VoxelPage() {
   return (
     <div className="h-full">
       <div className="relative h-full rounded-[12px] bg-white overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
-        <div className="flex items-start justify-center px-6 pb-32 pt-14">
-          <div className="flex w-[600px] shrink-0 flex-col gap-14">
+        <div className="flex items-start justify-center px-5 pb-24 pt-10 sm:px-6 sm:pb-32 sm:pt-14">
+          <div className="flex w-full max-w-[600px] flex-col gap-14">
 
             {/* Back */}
             <TransitionLink href="/" className="text-[12px] font-semibold tracking-widest text-[#9a9a9a] hover:text-[#777] transition-colors w-fit uppercase">
@@ -174,7 +178,7 @@ export default function VoxelPage() {
               <div className="relative w-full aspect-[1518/1080] overflow-hidden rounded-[4px]">
                 <video autoPlay loop muted playsInline className="h-full w-full object-cover" src="/projectFiles/voxelCoverAnimation.mp4" />
               </div>
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-3 gap-4 sm:gap-6">
                 {[
                   { label: 'ROLE',     value: 'Founding Designer' },
                   { label: 'TIMELINE', value: 'Feb – May 2025' },
@@ -208,7 +212,7 @@ export default function VoxelPage() {
               <p className="text-[16px] text-[#4a4a4a] leading-relaxed">
                 We talked to front-desk staff at local clinics to get a real sense of what their day looked like. Three things kept coming up, and none of their existing tools were doing anything about them.
               </p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {[
                   { stat: '1–2 hrs',        label: 'spent after closing on manual reminder calls every day' },
                   { stat: 'Mid-call lookups', label: 'constantly flipping to their EMR during patient calls' },
