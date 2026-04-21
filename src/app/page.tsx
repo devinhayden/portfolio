@@ -32,7 +32,7 @@ function CopyEmailIcon() {
   };
 
   return (
-    <span className="relative">
+    <span className="relative inline-flex items-center">
       <button
         onClick={handleCopy}
         onMouseEnter={() => setHovered(true)}
