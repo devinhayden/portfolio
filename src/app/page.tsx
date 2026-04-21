@@ -14,6 +14,52 @@ import { useNavigate } from '@/components/PageTransitionWrapper';
 
 const caveatFont = Caveat({ subsets: ['latin'], weight: ['400'] });
 
+const EMAIL = 'dhydn04@gmail.com';
+
+function CopyEmailIcon() {
+  const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(EMAIL).then(() => {
+      setCopied(true);
+      setHovered(true);
+      setTimeout(() => {
+        setCopied(false);
+        setHovered(false);
+      }, 2000);
+    });
+  };
+
+  return (
+    <span className="relative">
+      <button
+        onClick={handleCopy}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => { if (!copied) setHovered(false); }}
+        aria-label="Copy email"
+        className="text-black/50 hover:text-black/80 transition-colors duration-150"
+      >
+        <EnvelopeSimple size={20} />
+      </button>
+      <AnimatePresence>
+        {hovered && (
+          <motion.span
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 top-full mt-2 flex items-center gap-2 whitespace-nowrap rounded-[4px] bg-white border border-[rgba(176,176,176,0.4)] px-2.5 py-1.5 pointer-events-none z-10"
+          >
+            <span className="text-[12px] text-[#1e1e1e] font-medium">{EMAIL}</span>
+            <span className="text-[11px] text-[#aaa]">{copied ? '✓ Copied' : 'Click to copy'}</span>
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
 const projects = [
   {
     id: 'voxel',
@@ -279,10 +325,8 @@ export default function HubPage() {
                     You can find and contact him below.
                   </p>
                   <div className="flex items-center gap-6">
-                    <a href="mailto:dhydn04@gmail.com" aria-label="Email"
-                      className="text-black/50 transition-opacity hover:text-black/80">
-                      <EnvelopeSimple size={20} />
-                    </a>
+                    <CopyEmailIcon />
+
                     <a href="https://x.com/devinxhayden" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter"
                       className="text-black/50 transition-opacity hover:text-black/80">
                       <XLogo size={16} />
