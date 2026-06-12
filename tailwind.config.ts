@@ -10,6 +10,7 @@ const config: Config = {
         geist: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-geist-mono)', 'monospace'],
         serif: ['var(--font-instrument-serif)', 'serif'],
+        rowan: ['var(--font-rowan)', 'serif'],
         handwriting: ['var(--font-caveat)', 'cursive'],
       },
       colors: {

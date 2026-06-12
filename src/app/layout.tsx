@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
 import { Instrument_Serif, Caveat } from 'next/font/google';
+import localFont from 'next/font/local';
+import GrainFilter from '@/components/GrainFilter';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import './globals.css';
 
@@ -15,6 +17,15 @@ const instrumentSerif = Instrument_Serif({
 const caveat = Caveat({
   subsets: ['latin'],
   variable: '--font-caveat',
+});
+
+const rowan = localFont({
+  src: [
+    { path: '../../public/fonts/Rowan-Variable.woff2', style: 'normal' },
+    { path: '../../public/fonts/Rowan-VariableItalic.woff2', style: 'italic' },
+  ],
+  variable: '--font-rowan',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -36,12 +47,11 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap"
         />
       </head>
-      <body className={`${GeistMono.variable} ${GeistSans.variable} ${instrumentSerif.variable} ${caveat.variable} font-sans`}>
-        <div className="h-screen bg-[#f7f6f4] p-2 sm:p-4 font-geist">
-          <PageTransitionWrapper>
-            <main className="h-full">{children}</main>
-          </PageTransitionWrapper>
-        </div>
+      <body className={`${GeistMono.variable} ${GeistSans.variable} ${instrumentSerif.variable} ${caveat.variable} ${rowan.variable} font-geist`}>
+        <GrainFilter />
+        <PageTransitionWrapper>
+          <main>{children}</main>
+        </PageTransitionWrapper>
       </body>
     </html>
   );
