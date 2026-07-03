@@ -13,11 +13,13 @@ import Link from "next/link";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 
-const PHOTO_SRCS = [
-  "/photos/1.jpg",
-  "/photos/2.jpg",
-  "/photos/3.jpg",
-  "/photos/4.jpg",
+/* Per-photo treatment: `effect` selects the shader's light pass,
+   `drift` is the dreamlike uv-warp amount (only the clouds want it). */
+const PHOTOS = [
+  { src: "/photos/1.jpg", effect: 0, drift: 0.0035 }, // clouds
+  { src: "/photos/2.jpg", effect: 1, drift: 0 }, // bamboo
+  { src: "/photos/3.jpg", effect: 2, drift: 0 }, // pond
+  { src: "/photos/4.jpg", effect: 3, drift: 0 }, // highway
 ];
 
 const CROSSFADE_SECONDS = 0.6;
@@ -46,9 +48,43 @@ const fragmentShader = /* glsl */ `
   uniform float uMix;      // crossfade between A and B
   uniform vec2 uTexResA;
   uniform vec2 uTexResB;
+  uniform float uEffectA;  // per-photo light pass (0 clouds, 1 bamboo, 2 pond, 3 highway)
+  uniform float uEffectB;
+  uniform float uDriftA;   // per-photo uv-warp amount
+  uniform float uDriftB;
 
-  float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  float hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+  }
+
+  vec2 hash22(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xx + p3.yz) * p3.zy);
+  }
+
+  float vnoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash12(i), hash12(i + vec2(1.0, 0.0)), f.x),
+      mix(hash12(i + vec2(0.0, 1.0)), hash12(i + vec2(1.0, 1.0)), f.x),
+      f.y
+    );
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 3; i++) {
+      v += a * vnoise(p);
+      p *= 2.03;
+      a *= 0.5;
+    }
+    return v;
   }
 
   vec2 coverUv(vec2 uv, vec2 texRes, float zoom) {
@@ -58,6 +94,82 @@ const fragmentShader = /* glsl */ `
       ? vec2(1.0, texAspect / screenAspect)
       : vec2(screenAspect / texAspect, 1.0);
     return (uv - 0.5) * s / zoom + 0.5;
+  }
+
+  // soft floating dust motes, drifting slowly upward
+  float motes(vec2 uv, float t, float scale, float thresh) {
+    vec2 p = uv * vec2(uRes.x / uRes.y, 1.0) * scale + vec2(0.0, -t * 0.018);
+    vec2 cell = floor(p);
+    float h = hash12(cell);
+    vec2 pos = hash22(cell) * 0.6 + 0.2;
+    float dist = length(fract(p) - pos);
+    float twinkle = 0.55 + 0.45 * sin(t * (0.6 + h) + h * 6.2831);
+    return smoothstep(0.16, 0.0, dist) * twinkle * step(thresh, h);
+  }
+
+  // sharp glints that twinkle in place
+  float sparkle(vec2 uv, float t, float scale) {
+    vec2 p = uv * vec2(uRes.x / uRes.y, 1.0) * scale;
+    vec2 cell = floor(p);
+    float h = hash12(cell);
+    vec2 pos = hash22(cell) * 0.7 + 0.15;
+    float dist = length(fract(p) - pos);
+    float twinkle = pow(0.5 + 0.5 * sin(t * (1.5 + h * 2.0) + h * 6.2831), 6.0);
+    return smoothstep(0.2, 0.0, dist) * twinkle * step(0.55, h);
+  }
+
+  vec3 renderPhoto(sampler2D tex, vec2 texRes, float effect, float drift,
+                   vec2 suv, float t, float zoom, float e) {
+    // per-photo dreamlike drift (clouds only), stronger once inside
+    vec2 uv = suv + drift * (0.7 + 0.9 * e) * vec2(
+      sin(suv.y * 7.0 + t * 0.35),
+      cos(suv.x * 6.0 + t * 0.28)
+    );
+    vec2 tuv = coverUv(uv, texRes, zoom);
+
+    // highway: heat shimmer confined to the horizon band
+    if (effect > 2.5) {
+      float band = exp(-pow((tuv.y - 0.42) * 7.0, 2.0));
+      tuv.x += band * 0.0018 * sin(tuv.y * 240.0 + t * 2.2);
+    }
+
+    vec3 col = texture2D(tex, tuv).rgb;
+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
+
+    if (effect < 0.5) {
+      // clouds: drifting haze veil + a soft breathing sun
+      float haze = fbm(tuv * 2.5 + vec2(t * 0.015, t * 0.008));
+      col += (haze - 0.5) * 0.12;
+      float sun = exp(-length(tuv - vec2(0.65, 0.85)) * 2.2)
+        * (0.85 + 0.15 * sin(t * 0.2));
+      col += vec3(1.0, 0.94, 0.82) * sun * 0.2;
+    } else if (effect < 1.5) {
+      // bamboo: god rays slanting through + floating dust motes
+      vec2 rayDir = normalize(vec2(0.35, 1.0));
+      float rayCoord = dot(suv, vec2(rayDir.y, -rayDir.x));
+      float ray = vnoise(vec2(rayCoord * 14.0 - t * 0.12, 0.5));
+      ray = pow(smoothstep(0.35, 0.95, ray), 2.0);
+      float fade = smoothstep(0.0, 0.7, suv.y);
+      col += vec3(1.0, 0.98, 0.85) * ray * fade * 0.18;
+      float dust = motes(suv, t, 24.0, 0.78) + motes(suv, t, 46.0, 0.85);
+      col += vec3(1.0, 0.98, 0.9) * dust * 0.35;
+    } else if (effect < 2.5) {
+      // pond: glints keyed to the bright green water + a slow roaming sheen;
+      // the green-dominance key keeps sparkle off the rocks and the person
+      float waterMask = smoothstep(0.3, 0.65, lum)
+        * smoothstep(0.0, 0.08, col.g - max(col.r, col.b));
+      float glint = sparkle(suv, t, 90.0);
+      col += vec3(1.0, 0.98, 0.9) * glint * waterMask * 0.85;
+      float sheenCoord = dot(tuv, normalize(vec2(0.3, 1.0)));
+      float sheen = exp(-pow((sheenCoord - (0.45 + 0.18 * sin(t * 0.12))) * 6.0, 2.0));
+      col += vec3(0.9, 1.0, 0.85) * sheen * waterMask * 0.1;
+    } else {
+      // highway: golden-hour bloom breathing over the bright sky
+      float bloom = smoothstep(0.55, 0.85, lum) * (0.8 + 0.2 * sin(t * 0.1));
+      col += vec3(1.0, 0.85, 0.62) * bloom * 0.1;
+    }
+
+    return col;
   }
 
   void main() {
@@ -72,22 +184,14 @@ const fragmentShader = /* glsl */ `
     float alpha = 1.0 - smoothstep(-0.75, 0.75, sd);
     if (alpha <= 0.001) discard;
 
-    // gentle dreamlike drift, stronger once inside
-    vec2 uv = vUv;
-    float amt = 0.0025 + 0.0035 * e;
-    uv += amt * vec2(
-      sin(uv.y * 7.0 + uTime * 0.35),
-      cos(uv.x * 6.0 + uTime * 0.28)
-    );
-
     // slight zoom as you enter the window
     float zoom = mix(1.0, 1.1, e);
-    vec3 colA = texture2D(uTexA, coverUv(uv, uTexResA, zoom)).rgb;
-    vec3 colB = texture2D(uTexB, coverUv(uv, uTexResB, zoom)).rgb;
+    vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
+    vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, vUv, uTime, zoom, e);
     vec3 col = mix(colA, colB, uMix);
 
     // film grain
-    float g = hash(vUv * uRes + fract(uTime) * 100.0) - 0.5;
+    float g = hash12(vUv * uRes + fract(uTime) * 100.0) - 0.5;
     col += g * 0.035;
 
     // soft vignette once inside
@@ -132,7 +236,7 @@ function SceneLoader({
   useEffect(() => {
     let alive = true;
     const loader = new THREE.TextureLoader();
-    Promise.all(PHOTO_SRCS.map((src) => loader.loadAsync(src))).then(
+    Promise.all(PHOTOS.map(({ src }) => loader.loadAsync(src))).then(
       (loaded) => {
         if (!alive) {
           loaded.forEach((t) => t.dispose());
@@ -184,6 +288,10 @@ function Scene({
       uMix: { value: 0 },
       uTexResA: { value: textureSize(textures[0]) },
       uTexResB: { value: textureSize(textures[0]) },
+      uEffectA: { value: PHOTOS[0].effect },
+      uEffectB: { value: PHOTOS[0].effect },
+      uDriftA: { value: PHOTOS[0].drift },
+      uDriftB: { value: PHOTOS[0].drift },
     }),
     [textures],
   );
@@ -213,6 +321,8 @@ function Scene({
         f.index = (f.index + dir + textures.length) % textures.length;
         uniforms.uTexB.value = textures[f.index];
         uniforms.uTexResB.value.copy(textureSize(textures[f.index]));
+        uniforms.uEffectB.value = PHOTOS[f.index].effect;
+        uniforms.uDriftB.value = PHOTOS[f.index].drift;
         f.mix = 0;
         f.active = true;
       },
@@ -267,6 +377,8 @@ function Scene({
       if (f.mix >= 1) {
         uniforms.uTexA.value = uniforms.uTexB.value;
         uniforms.uTexResA.value.copy(uniforms.uTexResB.value);
+        uniforms.uEffectA.value = uniforms.uEffectB.value;
+        uniforms.uDriftA.value = uniforms.uDriftB.value;
         uniforms.uMix.value = 0;
         f.active = false;
       }
