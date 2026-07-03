@@ -20,7 +20,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
    faint echo of its mood, close enough to the base cream that it reads
    as light spilling from the window rather than a color change. */
 const PHOTOS = [
-  { src: "/photos/1.jpg", effect: 0, drift: 0.006, tint: "#ecece9" }, // clouds, cool
+  { src: "/photos/1.jpg", effect: 0, drift: 0.01, tint: "#ecece9" }, // clouds, cool
   { src: "/photos/2.jpg", effect: 1, drift: 0, tint: "#edece2" }, // bamboo, sage
   { src: "/photos/4.jpg", effect: 3, drift: 0, tint: "#f2ebdd" }, // highway, gold
 ];
@@ -719,7 +719,7 @@ export default function Home() {
           at low opacity so it doesn't drag brightness down like before. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-15 mix-blend-multiply"
+        className="pointer-events-none fixed inset-0 z-0 opacity-20 mix-blend-multiply"
         style={{
           backgroundImage: "url(/texture.jpg)",
           backgroundSize: "cover",
