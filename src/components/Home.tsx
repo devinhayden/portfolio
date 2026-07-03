@@ -14,12 +14,15 @@ import { usePathname } from "next/navigation";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 
-/* Per-photo treatment: `effect` selects the shader's light pass,
-   `drift` is the dreamlike uv-warp amount (only the clouds want it). */
+/* Per-photo treatment: `effect` selects the shader's light pass, `drift`
+   is the dreamlike uv-warp amount (only the clouds want it), and `tint`
+   is the ambient page-background wash while that photo is showing - a
+   faint echo of its mood, close enough to the base cream that it reads
+   as light spilling from the window rather than a color change. */
 const PHOTOS = [
-  { src: "/photos/1.jpg", effect: 0, drift: 0.006 }, // clouds
-  { src: "/photos/2.jpg", effect: 1, drift: 0 }, // bamboo
-  { src: "/photos/4.jpg", effect: 3, drift: 0 }, // highway
+  { src: "/photos/1.jpg", effect: 0, drift: 0.006, tint: "#e7eaec" }, // clouds, cool
+  { src: "/photos/2.jpg", effect: 1, drift: 0, tint: "#e8ebe0" }, // bamboo, green
+  { src: "/photos/4.jpg", effect: 3, drift: 0, tint: "#f2e8d6" }, // highway, golden
 ];
 
 const CROSSFADE_SECONDS = 0.6;
@@ -43,6 +46,7 @@ const fragmentShader = /* glsl */ `
   uniform vec4 uRect;      // window at rest: center x, center y (gl coords), half w, half h
   uniform float uProgress; // 0 = home, 1 = fully inside
   uniform float uTime;
+  uniform vec2 uParallax;  // smoothed cursor position, -1..1
   uniform sampler2D uTexA;
   uniform sampler2D uTexB;
   uniform float uMix;      // crossfade between A and B
@@ -377,17 +381,24 @@ const fragmentShader = /* glsl */ `
 
     // slight zoom as you enter the window
     float zoom = mix(1.0, 1.1, e);
+    // cursor parallax: the photo drifts a couple percent opposite the
+    // cursor, like looking through a pane of glass at a scene behind it.
+    // Only a sampling-coordinate offset (not a mask change), and it fades
+    // out by the time the window is half open - a resting-state detail,
+    // not something that should fight the immersive full-screen view.
+    vec2 parallax = uParallax * 0.035 * (1.0 - smoothstep(0.0, 0.5, e));
+    vec2 puv = vUv + parallax;
     // uMix is a uniform (not per-pixel), so this branch is coherent across
     // the whole draw call: outside the brief crossfade window we skip the
     // second photo's full effect stack entirely rather than paying for it
     // and discarding it via mix().
     vec3 col;
     if (uMix > 0.001) {
-      vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
-      vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, vUv, uTime, zoom, e);
+      vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, puv, uTime, zoom, e);
+      vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, puv, uTime, zoom, e);
       col = mix(colA, colB, uMix);
     } else {
-      col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
+      col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, puv, uTime, zoom, e);
     }
 
     // inner recessed edge: an even inset shadow around the whole perimeter
@@ -424,6 +435,7 @@ const fragmentShader = /* glsl */ `
 
 type ProgressState = { target: number; current: number; lastInput: number };
 type PhotoController = { go: (dir: 1 | -1) => void };
+type ParallaxState = { tx: number; ty: number; x: number; y: number };
 
 function clamp01(v: number) {
   return Math.min(1, Math.max(0, v));
@@ -449,6 +461,8 @@ function SceneLoader({
   chromeRef: RefObject<HTMLDivElement | null>;
   progressRef: MutableRefObject<ProgressState>;
   controllerRef: MutableRefObject<PhotoController | null>;
+  parallaxRef: MutableRefObject<ParallaxState>;
+  onPhotoChange: (index: number) => void;
   onReady: () => void;
 }) {
   const [textures, setTextures] = useState<THREE.Texture[] | null>(null);
@@ -484,6 +498,8 @@ function Scene({
   chromeRef,
   progressRef,
   controllerRef,
+  parallaxRef,
+  onPhotoChange,
   textures,
   onReady,
 }: {
@@ -491,6 +507,8 @@ function Scene({
   chromeRef: RefObject<HTMLDivElement | null>;
   progressRef: MutableRefObject<ProgressState>;
   controllerRef: MutableRefObject<PhotoController | null>;
+  parallaxRef: MutableRefObject<ParallaxState>;
+  onPhotoChange: (index: number) => void;
   textures: THREE.Texture[];
   onReady: () => void;
 }) {
@@ -503,6 +521,7 @@ function Scene({
       uRect: { value: new THREE.Vector4(0, 0, 0, 0) },
       uProgress: { value: 0 },
       uTime: { value: 0 },
+      uParallax: { value: new THREE.Vector2(0, 0) },
       uTexA: { value: textures[0] },
       uTexB: { value: textures[0] },
       uMix: { value: 0 },
@@ -545,12 +564,13 @@ function Scene({
         uniforms.uDriftB.value = PHOTOS[f.index].drift;
         f.mix = 0;
         f.active = true;
+        onPhotoChange(f.index);
       },
     };
     return () => {
       controllerRef.current = null;
     };
-  }, [controllerRef, textures, uniforms]);
+  }, [controllerRef, textures, uniforms, onPhotoChange]);
 
   // keep the shader's rest rect aligned with the DOM square
   useEffect(() => {
@@ -586,6 +606,11 @@ function Scene({
     }
     p.current += (p.target - p.current) * Math.min(1, delta * 7);
     if (Math.abs(p.target - p.current) < 0.0005) p.current = p.target;
+
+    const px = parallaxRef.current;
+    px.x += (px.tx - px.x) * Math.min(1, delta * 4);
+    px.y += (px.ty - px.y) * Math.min(1, delta * 4);
+    uniforms.uParallax.value.set(px.x, px.y);
 
     uniforms.uProgress.value = p.current;
     uniforms.uTime.value = state.clock.elapsedTime;
@@ -637,8 +662,21 @@ export default function Home() {
     current: 0,
     lastInput: 0,
   });
+  const parallaxRef = useRef<ParallaxState>({ tx: 0, ty: 0, x: 0, y: 0 });
   const [photosReady, setPhotosReady] = useState(false);
   const onPhotosReady = useCallback(() => setPhotosReady(true), []);
+  const [activePhoto, setActivePhoto] = useState(0);
+  const onPhotoChange = useCallback((index: number) => setActivePhoto(index), []);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      const px = parallaxRef.current;
+      px.tx = (e.clientX / window.innerWidth - 0.5) * 2;
+      px.ty = (e.clientY / window.innerHeight - 0.5) * 2;
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    return () => window.removeEventListener("mousemove", onMouseMove);
+  }, []);
 
   useEffect(() => {
     const p = progressRef.current;
@@ -668,7 +706,10 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen overflow-hidden bg-background text-foreground">
+    <div
+      className="h-screen overflow-hidden text-foreground transition-colors duration-[1200ms] ease-out"
+      style={{ backgroundColor: PHOTOS[activePhoto].tint }}
+    >
       {/* Paper-grain texture over the page fill only. Sits at z-0 below the
           canvas (z-10); the opaque photo window covers it, so the texture
           never touches the images themselves. Multiply blend lets the dark
@@ -690,6 +731,8 @@ export default function Home() {
             chromeRef={chromeRef}
             progressRef={progressRef}
             controllerRef={controllerRef}
+            parallaxRef={parallaxRef}
+            onPhotoChange={onPhotoChange}
             onReady={onPhotosReady}
           />
         </Canvas>
