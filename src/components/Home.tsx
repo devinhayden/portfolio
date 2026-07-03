@@ -713,15 +713,13 @@ export default function Home() {
     >
       {/* Paper-grain texture over the page fill only. Sits at z-0 below the
           canvas (z-10); the opaque photo window covers it, so the texture
-          never touches the images themselves. Soft-light instead of
-          multiply: multiply darkens uniformly regardless of the overlay's
-          own tone, which was flattening the whole page toward gray. The
-          texture is itself a light paper scan, so soft-light lets its
-          bright areas lift the background and only its darker grain
-          flecks add contrast - texture without an overall dimming cast. */}
+          never touches the images themselves. Soft-light kept the page too
+          flat - the texture's own contrast is too low for that blend mode
+          to register. Back to multiply (which reads the grain clearly) but
+          at low opacity so it doesn't drag brightness down like before. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-50 mix-blend-soft-light"
+        className="pointer-events-none fixed inset-0 z-0 opacity-15 mix-blend-multiply"
         style={{
           backgroundImage: "url(/texture.jpg)",
           backgroundSize: "cover",
