@@ -16,9 +16,8 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 /* Per-photo treatment: `effect` selects the shader's light pass,
    `drift` is the dreamlike uv-warp amount (only the clouds want it). */
 const PHOTOS = [
-  { src: "/photos/1.jpg", effect: 0, drift: 0.0035 }, // clouds
+  { src: "/photos/1.jpg", effect: 0, drift: 0.009 }, // clouds
   { src: "/photos/2.jpg", effect: 1, drift: 0 }, // bamboo
-  { src: "/photos/3.jpg", effect: 2, drift: 0 }, // pond
   { src: "/photos/4.jpg", effect: 3, drift: 0 }, // highway
 ];
 
@@ -249,10 +248,11 @@ const fragmentShader = /* glsl */ `
 
   vec3 renderPhoto(sampler2D tex, vec2 texRes, float effect, float drift,
                    vec2 suv, float t, float zoom, float e) {
-    // per-photo dreamlike drift (clouds only), stronger once inside
+    // per-photo dreamlike drift (clouds only), stronger once inside;
+    // lower frequency reads as a broad, sweeping sway rather than jitter
     vec2 uv = suv + drift * (0.7 + 0.9 * e) * vec2(
-      sin(suv.y * 7.0 + t * 0.35),
-      cos(suv.x * 6.0 + t * 0.28)
+      sin(suv.y * 3.5 + t * 0.45),
+      cos(suv.x * 3.0 + t * 0.38)
     );
     vec2 tuv = coverUv(uv, texRes, zoom);
 
@@ -268,9 +268,9 @@ const fragmentShader = /* glsl */ `
 
     if (effect < 0.5) {
       // clouds: traveling light + drifting mist veils + breathing sun + grade
-      float sweep = fbm(tuv * 1.6 + vec2(t * 0.02, t * 0.006));
+      float sweep = fbm(tuv * 1.6 + vec2(t * 0.035, t * 0.012));
       col *= 0.92 + 0.18 * sweep;
-      float mist = warpedFbm(tuv * 2.2 - vec2(t * 0.01, t * 0.014), t);
+      float mist = warpedFbm(tuv * 2.2 - vec2(t * 0.02, t * 0.026), t);
       col += vec3(0.9, 0.93, 1.0) * smoothstep(0.45, 0.85, mist) * 0.22;
       float glow = exp(-length(tuv - vec2(0.7, 0.95)) * 1.7) * breathe;
       col += vec3(1.0, 0.93, 0.78) * glow * 0.38;
@@ -279,8 +279,12 @@ const fragmentShader = /* glsl */ `
     } else if (effect < 1.5) {
       // bamboo: volumetric shafts + canopy halation + fine motes + green grade
       // light source sits off-frame past the top-right corner so the fan of
-      // shafts reads as a consistent diagonal sweep down toward the bottom-left
-      float rays = lightShafts(tuv, vec2(1.5, 1.45), t, 9.0, 0.45);
+      // shafts reads as a consistent diagonal sweep down toward the bottom-left;
+      // it also wanders slowly in a small loop so the shaft angle drifts
+      // gently, like leaves stirring in the canopy above
+      vec2 bambooLight = vec2(1.5, 1.45)
+        + vec2(sin(t * 0.06) * 0.09, cos(t * 0.045) * 0.05);
+      float rays = lightShafts(tuv, bambooLight, t, 9.0, 0.45);
       col += vec3(1.0, 0.97, 0.8) * rays * 0.4 * breathe;
       col += vec3(1.0, 0.98, 0.85) * pow(lum, 3.0) * 0.3;
       float dust = motes(suv, t, 60.0, 0.82) + motes(suv, t, 110.0, 0.86);
@@ -338,15 +342,21 @@ const fragmentShader = /* glsl */ `
       col += vec3(1.0, 0.97, 0.85) * pow(lum, 3.0) * 0.22;
       col = mix(col, col * vec3(0.94, 1.04, 0.94), 0.2);
     } else {
-      // highway: golden horizon glow + light sweeping the hills + sky grade
+      // highway: golden horizon glow + drifting cloud-shadow bands + floating
+      // sunlit dust + sky grade
       float horizonGlow = exp(-pow((tuv.y - 0.46) * 3.0, 2.0));
       col += vec3(1.0, 0.82, 0.55) * horizonGlow * 0.2 * breathe;
       float ground = smoothstep(0.55, 0.35, tuv.y);
-      float sweep = fbm(tuv * vec2(2.2, 1.4) + vec2(t * 0.03, 0.0));
-      col *= 1.0 + (sweep - 0.5) * 0.16 * ground;
+      // large, slow-drifting shadow bands crossing the hills, like cloud
+      // shadow moving over open ground on a breezy day
+      float sweep = fbm(tuv * vec2(1.1, 1.6) + vec2(t * 0.05, t * 0.008));
+      col *= 1.0 + (sweep - 0.5) * 0.3 * ground;
       float sky = smoothstep(0.42, 0.6, tuv.y);
       col = mix(col, col * vec3(1.09, 0.99, 0.87), sky * 0.45);
       col += vec3(1.0, 0.9, 0.7) * pow(lum, 3.0) * 0.2;
+      // fine sunlit dust drifting across the golden-hour air
+      float dust = motes(suv, t, 40.0, 0.85) + motes(suv, t, 80.0, 0.9);
+      col += vec3(1.0, 0.88, 0.62) * dust * 0.32;
     }
 
     return col;
