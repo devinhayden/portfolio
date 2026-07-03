@@ -181,6 +181,58 @@ const fragmentShader = /* glsl */ `
     return smoothstep(radius, 0.0, w.x) * twinkle * step(0.4, h);
   }
 
+  // --- pond water surface: raymarched-style height field --------------
+  // Stylized adaptation of the layered ridge-fold octave technique used in
+  // raymarched ocean shaders (each octave sums two drifting, ridge-folded
+  // sine fields and shears the domain before the next octave, so the chop
+  // reads as natural rather than a repeating grid). We don't have a real
+  // camera/scene to raymarch against here — this stands in for the height
+  // field a raymarcher would step through to find the water surface.
+  float waveRidge(vec2 uv) {
+    vec2 wv = 1.0 - abs(sin(uv));
+    vec2 swv = abs(cos(uv));
+    wv = mix(wv, swv, wv);
+    return pow(1.0 - pow(wv.x * wv.y, 0.65), 3.0);
+  }
+
+  float waterHeight(vec2 p, float t) {
+    mat2 shear = mat2(1.5, 1.1, -1.1, 1.5);
+    float freq = 2.6;
+    float amp = 0.55;
+    float h = 0.0;
+    vec2 uv = p;
+    for (int i = 0; i < 2; i++) {
+      float d = waveRidge((uv + t) * freq) + waveRidge((uv - t) * freq);
+      h += d * amp;
+      uv = shear * uv;
+      freq *= 1.8;
+      amp *= 0.22;
+    }
+    return h;
+  }
+
+  // normal from finite differences of the height field, reusing the
+  // already-computed center height to halve the redundant sampling
+  vec3 waterNormal(vec2 p, float t, float h) {
+    float eps = 0.12;
+    float hx = waterHeight(p + vec2(eps, 0.0), t);
+    float hy = waterHeight(p + vec2(0.0, eps), t);
+    return normalize(vec3(h - hx, eps * 1.5, h - hy));
+  }
+
+  // frequency-modulated halftone: the dot grid's spacing (not just each
+  // dot's radius) is driven by amount, so the screen itself breathes
+  // denser and sparser with the underlying signal, like an engraving
+  // reacting to light rather than a fixed-pitch print screen
+  float fmHalftone(vec2 uv, float amount, float baseFreq, float modAmount) {
+    float freq = baseFreq + amount * modAmount;
+    vec2 g = uv * freq;
+    vec2 cell = fract(g) - 0.5;
+    float d = length(cell);
+    float radius = 0.2 + amount * 0.22;
+    return smoothstep(radius, radius - 0.14, d);
+  }
+
   vec3 renderPhoto(sampler2D tex, vec2 texRes, float effect, float drift,
                    vec2 suv, float t, float zoom, float e) {
     // per-photo dreamlike drift (clouds only), stronger once inside
@@ -221,16 +273,39 @@ const fragmentShader = /* glsl */ `
       col += vec3(1.0, 0.98, 0.9) * dust * 0.22;
       col = mix(col, col * vec3(0.93, 1.05, 0.9), 0.22);
     } else if (effect < 2.5) {
-      // pond: gold shafts + living water shimmer + glints + halation + grade;
-      // warm-brightness key holds the effects to the sunlit water
+      // pond: raymarched-style wave field drives specular glints, post-
+      // processed into discrete sparkle points, and textured with a
+      // frequency-modulated halftone screen; warm-brightness key holds
+      // it all to the sunlit water
       float rays = lightShafts(tuv, vec2(0.8, 1.2), t, 7.0, 0.5);
       col += vec3(1.0, 0.93, 0.7) * rays * 0.3 * breathe;
-      float waterMask = smoothstep(0.25, 0.55, lum)
-        * smoothstep(0.06, 0.22, min(col.r, col.g) - col.b);
-      float rip = vnoise(tuv * 42.0 + vec2(t * 0.24, t * 0.17));
-      col += (rip - 0.5) * 0.13 * waterMask;
-      float glint = sparkle(suv, t, 70.0);
-      col += vec3(1.0, 0.98, 0.9) * glint * waterMask * 1.2;
+      // true green-dominance: needs col.g to beat col.r too, not just col.b,
+      // otherwise warm, low-blue surfaces (sunlit rock, skin, the person's
+      // tan shirt) satisfy the old min(r,g)-b key just as well as water does
+      float waterMask = smoothstep(0.15, 0.5, lum)
+        * smoothstep(-0.02, 0.05, col.g - col.r)
+        * smoothstep(0.02, 0.15, col.g - col.b);
+
+      vec2 wp = suv * vec2(uRes.x / uRes.y, 1.0) * 3.4;
+      float wt = t * 0.3;
+      float wh = waterHeight(wp, wt);
+      vec3 wn = waterNormal(wp, wt, wh);
+      vec3 lightDir = normalize(vec3(0.4, 0.7, 0.45));
+      float spec = pow(max(dot(wn, normalize(lightDir + vec3(0.0, 0.0, 1.0))), 0.0), 130.0);
+
+      // the chop shows through as a soft living shimmer on the water itself
+      col += (wh - 0.7) * 0.1 * waterMask;
+
+      // post-process the raw specular field into discrete twinkling points
+      // by gating the Worley glint field with the raymarched sparkle response
+      // instead of letting either drive brightness alone
+      float glint = sparkle(suv, t, 70.0) * smoothstep(0.1, 0.7, spec * 4.0);
+      col += vec3(1.0, 0.98, 0.9) * glint * waterMask * 1.6;
+
+      // frequency-modulated halftone screen, densest where the light catches
+      float halftone = fmHalftone(wp, spec, 55.0, 90.0);
+      col += vec3(0.85, 1.0, 0.9) * halftone * spec * waterMask * 0.9;
+
       col += vec3(1.0, 0.97, 0.85) * pow(lum, 3.0) * 0.22;
       col = mix(col, col * vec3(0.94, 1.04, 0.94), 0.2);
     } else {
