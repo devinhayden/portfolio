@@ -220,6 +220,20 @@ const fragmentShader = /* glsl */ `
     return normalize(vec3(h - hx, eps * 1.5, h - hy));
   }
 
+  // caustic light-net: two ridge-fold fields counter-scrolling at
+  // different speeds and scales, combined with min() so only their
+  // intersections stay bright. A single scrolling noise field just reads
+  // as a wobbling blob of brightness; real (and most convincing procedural)
+  // caustics come from two interfering patterns - the net of thin bright
+  // curves is the intersections, not either pattern alone.
+  float causticNet(vec2 p, float t) {
+    vec2 uv1 = p * 13.0 + vec2(t * 0.55, -t * 0.35);
+    vec2 uv2 = p * 17.0 + vec2(-t * 0.4, t * 0.5);
+    float c1 = waveRidge(uv1);
+    float c2 = waveRidge(uv2);
+    return min(c1, c2);
+  }
+
   // frequency-modulated halftone: the dot grid's spacing (not just each
   // dot's radius) is driven by amount, so the screen itself breathes
   // denser and sparser with the underlying signal, like an engraving
@@ -298,8 +312,18 @@ const fragmentShader = /* glsl */ `
       vec3 lightDir = normalize(vec3(0.4, 0.7, 0.45));
       float spec = pow(max(dot(wn, normalize(lightDir + vec3(0.0, 0.0, 1.0))), 0.0), 55.0);
 
-      // the chop shows through as a soft living shimmer on the water itself
-      col += (wh - 0.7) * 0.1 * waterMask;
+      // caustic light-net replaces the old flat brightness shimmer: sample
+      // three slightly offset copies so the bright veins fringe red/blue
+      // like light dispersing through water, instead of a flat white net.
+      // Gated by the photo's own local brightness so caustics stay near
+      // the water's already-sunlit patches rather than floating uniformly
+      // over shadowed water too.
+      float causticG = pow(causticNet(wp, wt), 1.8);
+      float causticR = pow(causticNet(wp + vec2(0.006, 0.0), wt), 1.8);
+      float causticB = pow(causticNet(wp - vec2(0.006, 0.0), wt), 1.8);
+      vec3 caustic = vec3(causticR, causticG, causticB);
+      float causticGate = smoothstep(0.04, 0.35, lum);
+      col += caustic * vec3(0.85, 1.0, 0.9) * 0.3 * waterMask * causticGate;
 
       // post-process the raw specular field into discrete twinkling points
       // by gating the Worley glint field with the raymarched sparkle response
