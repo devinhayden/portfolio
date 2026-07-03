@@ -20,9 +20,9 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
    faint echo of its mood, close enough to the base cream that it reads
    as light spilling from the window rather than a color change. */
 const PHOTOS = [
-  { src: "/photos/1.jpg", effect: 0, drift: 0.006, tint: "#e7eaec" }, // clouds, cool
-  { src: "/photos/2.jpg", effect: 1, drift: 0, tint: "#e8ebe0" }, // bamboo, green
-  { src: "/photos/4.jpg", effect: 3, drift: 0, tint: "#f2e8d6" }, // highway, golden
+  { src: "/photos/1.jpg", effect: 0, drift: 0.006, tint: "#edeae4" }, // clouds, barely cool
+  { src: "/photos/2.jpg", effect: 1, drift: 0, tint: "#ece9e0" }, // bamboo, faint sage
+  { src: "/photos/4.jpg", effect: 3, drift: 0, tint: "#f1e8da" }, // highway, warm gold
 ];
 
 const CROSSFADE_SECONDS = 0.6;
@@ -386,7 +386,7 @@ const fragmentShader = /* glsl */ `
     // Only a sampling-coordinate offset (not a mask change), and it fades
     // out by the time the window is half open - a resting-state detail,
     // not something that should fight the immersive full-screen view.
-    vec2 parallax = uParallax * 0.035 * (1.0 - smoothstep(0.0, 0.5, e));
+    vec2 parallax = uParallax * 0.02 * (1.0 - smoothstep(0.0, 0.5, e));
     vec2 puv = vUv + parallax;
     // uMix is a uniform (not per-pixel), so this branch is coherent across
     // the whole draw call: outside the brief crossfade window we skip the
@@ -407,9 +407,10 @@ const fragmentShader = /* glsl */ `
     // reads the same, rather than pooling in one corner. A whisper of
     // directional shading (upper-left key) adds realism without biasing the
     // depth toward any side. Tied to the mask geometry so it tracks through
-    // the early scroll, and faded out by e=0.4 since a full-screen photo
-    // has no frame to recess.
-    float frameFade = 1.0 - smoothstep(0.0, 0.4, e);
+    // the scroll; holds at full strength through the middle of the
+    // transition and only recedes in the last stretch as the photo
+    // approaches full-screen, where there's no frame left to recess.
+    float frameFade = 1.0 - smoothstep(0.55, 0.9, e);
     if (frameFade > 0.001) {
       float bevelWidth = min(halfSize.x, halfSize.y) * 0.18;
       float edge = smoothstep(-bevelWidth, 0.0, sd); // 1 at edge, 0 inside
