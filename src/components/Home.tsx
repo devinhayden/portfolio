@@ -389,6 +389,25 @@ const fragmentShader = /* glsl */ `
       col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
     }
 
+    // inner frame shadow: darkens a soft band just inside the window edge,
+    // more on the bottom-right than the top-left (as if lit from the upper
+    // left), so the photo reads as recessed within a frame with real depth
+    // rather than a flat cutout. Tied to the actual mask geometry (not a
+    // fixed DOM overlay) so it lines up at rest and through the early
+    // scroll-in; fades out entirely once the window has grown to fill the
+    // screen, where the idea of a "frame" no longer applies.
+    float frameFade = 1.0 - smoothstep(0.0, 0.4, e);
+    if (frameFade > 0.001) {
+      float edgeWidth = min(halfSize.x, halfSize.y) * 0.14;
+      float edgeProximity = smoothstep(0.0, -edgeWidth, sd);
+      vec2 local = (p - center) / halfSize;
+      vec2 edgeDir = normalize(local + 1e-4);
+      float lightSide = dot(edgeDir, normalize(vec2(-0.6, 0.6)));
+      float shadowAmt = edgeProximity * frameFade * (0.22 - 0.1 * lightSide);
+      col *= 1.0 - clamp(shadowAmt, 0.0, 0.35);
+      col += vec3(1.0) * edgeProximity * frameFade * max(lightSide, 0.0) * 0.05;
+    }
+
     // film grain
     float g = hash12(vUv * uRes + fract(uTime) * 100.0) - 0.5;
     col += g * 0.035;
@@ -655,7 +674,7 @@ export default function Home() {
 
       <div ref={chromeRef} className="relative z-20 flex h-full flex-col">
         <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-24">
-          <p className="font-mono text-xs uppercase tracking-[0.25em] text-neutral-500">
+          <p className="font-mono text-xs uppercase text-neutral-500">
             Scroll to take a peek
           </p>
 
@@ -689,13 +708,15 @@ export default function Home() {
             </button>
           </div>
 
-          <p className="max-w-sm text-center font-serif text-lg leading-relaxed text-foreground sm:max-w-md">
+          <p className="max-w-xs text-center font-serif text-md font-medium leading-relaxed text-foreground sm:max-w-sm">
             Devin is daydreaming about a finished portfolio. Until it&apos;s
             real: a look at his work, and a few scenes he&apos;s captured.
           </p>
+     
+     
         </main>
 
-        <footer className="flex items-center justify-center gap-10 pb-14 font-serif text-neutral-500">
+        <footer className="flex items-center justify-center gap-20 pb-14 font-serif text-sm text-neutral-500">
           <Link href="/" className="transition-colors hover:text-neutral-800">
             Home
           </Link>
