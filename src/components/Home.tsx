@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -12,13 +13,11 @@ import Link from "next/link";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 
-/* Placeholder gradients standing in for the real photos. Each entry becomes
-   a generated texture; swap for real images once they're in public/photos. */
-const PLACEHOLDER_HUES: [number, number][] = [
-  [210, 230], // dusk blue
-  [25, 355], // warm sunset
-  [140, 180], // sea green
-  [270, 310], // violet haze
+const PHOTO_SRCS = [
+  "/photos/1.jpg",
+  "/photos/2.jpg",
+  "/photos/3.jpg",
+  "/photos/4.jpg",
 ];
 
 const CROSSFADE_SECONDS = 0.6;
@@ -111,36 +110,49 @@ function smooth01(t: number) {
   return c * c * (3 - 2 * c);
 }
 
-function makePlaceholderTexture([h1, h2]: [number, number]) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1600;
-  canvas.height = 1067;
-  const ctx = canvas.getContext("2d")!;
-  const { width: w, height: h } = canvas;
+function textureSize(texture: THREE.Texture) {
+  const img = texture.image as { width: number; height: number };
+  return new THREE.Vector2(img.width, img.height);
+}
 
-  const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, `hsl(${h1} 50% 70%)`);
-  sky.addColorStop(0.6, `hsl(${(h1 + h2) / 2} 55% 52%)`);
-  sky.addColorStop(1, `hsl(${h2} 60% 30%)`);
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, w, h);
+/* Loads the photos, then mounts the scene; the DOM square stays white
+   until the first textured frame can render. */
+function SceneLoader({
+  onReady,
+  ...sceneProps
+}: {
+  squareRef: RefObject<HTMLDivElement | null>;
+  chromeRef: RefObject<HTMLDivElement | null>;
+  progressRef: MutableRefObject<ProgressState>;
+  controllerRef: MutableRefObject<PhotoController | null>;
+  onReady: () => void;
+}) {
+  const [textures, setTextures] = useState<THREE.Texture[] | null>(null);
 
-  const glow = ctx.createRadialGradient(
-    w * 0.5,
-    h * 0.35,
-    0,
-    w * 0.5,
-    h * 0.35,
-    w * 0.3,
-  );
-  glow.addColorStop(0, "rgba(255,245,225,0.4)");
-  glow.addColorStop(1, "rgba(255,245,225,0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, w, h);
+  useEffect(() => {
+    let alive = true;
+    const loader = new THREE.TextureLoader();
+    Promise.all(PHOTO_SRCS.map((src) => loader.loadAsync(src))).then(
+      (loaded) => {
+        if (!alive) {
+          loaded.forEach((t) => t.dispose());
+          return;
+        }
+        loaded.forEach((t) => {
+          t.colorSpace = THREE.SRGBColorSpace;
+        });
+        setTextures(loaded);
+      },
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
+  useEffect(() => () => textures?.forEach((t) => t.dispose()), [textures]);
+
+  if (!textures) return null;
+  return <Scene {...sceneProps} textures={textures} onReady={onReady} />;
 }
 
 function Scene({
@@ -148,17 +160,17 @@ function Scene({
   chromeRef,
   progressRef,
   controllerRef,
+  textures,
+  onReady,
 }: {
   squareRef: RefObject<HTMLDivElement | null>;
   chromeRef: RefObject<HTMLDivElement | null>;
   progressRef: MutableRefObject<ProgressState>;
   controllerRef: MutableRefObject<PhotoController | null>;
+  textures: THREE.Texture[];
+  onReady: () => void;
 }) {
   const size = useThree((s) => s.size);
-  const textures = useMemo(
-    () => PLACEHOLDER_HUES.map(makePlaceholderTexture),
-    [],
-  );
   const fade = useRef({ active: false, mix: 0, index: 0 });
 
   const uniforms = useMemo(
@@ -170,11 +182,13 @@ function Scene({
       uTexA: { value: textures[0] },
       uTexB: { value: textures[0] },
       uMix: { value: 0 },
-      uTexResA: { value: new THREE.Vector2(1600, 1067) },
-      uTexResB: { value: new THREE.Vector2(1600, 1067) },
+      uTexResA: { value: textureSize(textures[0]) },
+      uTexResB: { value: textureSize(textures[0]) },
     }),
     [textures],
   );
+
+  useEffect(() => onReady(), [onReady]);
 
   // Built imperatively so the material shares our exact uniforms object —
   // r3f clones a `uniforms` prop, which would orphan our per-frame updates.
@@ -189,13 +203,7 @@ function Scene({
     [uniforms],
   );
 
-  useEffect(
-    () => () => {
-      material.dispose();
-      textures.forEach((t) => t.dispose());
-    },
-    [material, textures],
-  );
+  useEffect(() => () => material.dispose(), [material]);
 
   useEffect(() => {
     controllerRef.current = {
@@ -204,6 +212,7 @@ function Scene({
         if (f.active) return;
         f.index = (f.index + dir + textures.length) % textures.length;
         uniforms.uTexB.value = textures[f.index];
+        uniforms.uTexResB.value.copy(textureSize(textures[f.index]));
         f.mix = 0;
         f.active = true;
       },
@@ -289,7 +298,8 @@ export default function Home() {
     current: 0,
     lastInput: 0,
   });
-  const [glReady, setGlReady] = useState(false);
+  const [photosReady, setPhotosReady] = useState(false);
+  const onPhotosReady = useCallback(() => setPhotosReady(true), []);
 
   useEffect(() => {
     const p = progressRef.current;
@@ -321,16 +331,13 @@ export default function Home() {
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground">
       <div className="fixed inset-0 z-10">
-        <Canvas
-          gl={{ alpha: true, antialias: true }}
-          dpr={[1, 2]}
-          onCreated={() => setGlReady(true)}
-        >
-          <Scene
+        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]}>
+          <SceneLoader
             squareRef={squareRef}
             chromeRef={chromeRef}
             progressRef={progressRef}
             controllerRef={controllerRef}
+            onReady={onPhotosReady}
           />
         </Canvas>
       </div>
@@ -356,7 +363,7 @@ export default function Home() {
             <div
               ref={squareRef}
               className="h-52 w-52 shrink-0 sm:h-64 sm:w-64 md:h-72 md:w-72"
-              style={{ background: glReady ? "transparent" : "#ffffff" }}
+              style={{ background: photosReady ? "transparent" : "#ffffff" }}
             />
 
             <button
