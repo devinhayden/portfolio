@@ -120,7 +120,7 @@ const fragmentShader = /* glsl */ `
     float fan = (uv.x - lightPos.x) / denom;
     float n = fbm(vec2(fan * freq + t * 0.05, uv.y * 1.2));
     float shaft = smoothstep(soft, 0.95, n);
-    float fall = exp(-max(lightPos.y - uv.y, 0.0) * 1.1);
+    float fall = exp(-max(lightPos.y - uv.y, 0.0) * 0.85);
     return shaft * fall;
   }
 
@@ -157,9 +157,14 @@ const fragmentShader = /* glsl */ `
     return vec3(minDist, h, 0.0);
   }
 
-  // fine dust motes, drifting slowly upward; pinpricks, not bokeh
+  // fine dust motes, rising slowly while swaying on a shared soft current;
+  // pinpricks, not bokeh
   float motes(vec2 uv, float t, float scale, float thresh) {
-    vec2 p = uv * vec2(uRes.x / uRes.y, 1.0) * scale + vec2(0.0, -t * 0.012);
+    vec2 sway = vec2(
+      sin(uv.y * 2.6 + t * 0.24),
+      cos(uv.x * 2.1 + t * 0.19)
+    ) * 0.16;
+    vec2 p = (uv + sway) * vec2(uRes.x / uRes.y, 1.0) * scale + vec2(0.0, -t * 0.012);
     vec3 w = worley(p);
     float h = w.y;
     float twinkle = 0.55 + 0.45 * sin(t * (0.6 + h) + h * 6.2831);
@@ -207,7 +212,9 @@ const fragmentShader = /* glsl */ `
       col = mix(col, col * vec3(0.96, 1.0, 1.07), (1.0 - lum) * 0.25);
     } else if (effect < 1.5) {
       // bamboo: volumetric shafts + canopy halation + fine motes + green grade
-      float rays = lightShafts(tuv, vec2(0.55, 1.15), t, 9.0, 0.45);
+      // light source sits off-frame past the top-right corner so the fan of
+      // shafts reads as a consistent diagonal sweep down toward the bottom-left
+      float rays = lightShafts(tuv, vec2(1.5, 1.45), t, 9.0, 0.45);
       col += vec3(1.0, 0.97, 0.8) * rays * 0.4 * breathe;
       col += vec3(1.0, 0.98, 0.85) * pow(lum, 3.0) * 0.3;
       float dust = motes(suv, t, 60.0, 0.82) + motes(suv, t, 110.0, 0.86);
