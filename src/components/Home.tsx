@@ -79,12 +79,37 @@ const fragmentShader = /* glsl */ `
   float fbm(vec2 p) {
     float v = 0.0;
     float a = 0.5;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
+      v += a * vnoise(p);
+      p *= 2.03; // lacunarity
+      a *= 0.5;  // gain
+    }
+    return v;
+  }
+
+  // cheap 2-octave fbm for building the warp field below; the warp only
+  // needs to be soft and large-scale, not detailed
+  float fbm2(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 2; i++) {
       v += a * vnoise(p);
       p *= 2.03;
       a *= 0.5;
     }
     return v;
+  }
+
+  // domain warping (Quilez): feed fbm's own output back in as a coordinate
+  // offset, twice, producing the swirling/marbled look plain fbm can't —
+  // this is what turns "noisy" into "atmospheric"
+  float warpedFbm(vec2 p, float t) {
+    vec2 q = vec2(fbm2(p), fbm2(p + vec2(5.2, 1.3)));
+    vec2 r = vec2(
+      fbm2(p + 2.0 * q + vec2(1.7, 9.2) + t * 0.015),
+      fbm2(p + 2.0 * q + vec2(8.3, 2.8) + t * 0.02)
+    );
+    return fbm(p + 2.5 * r);
   }
 
   // crepuscular rays: a converging fan of light shafts below a light
@@ -108,27 +133,47 @@ const fragmentShader = /* glsl */ `
     return (uv - 0.5) * s / zoom + 0.5;
   }
 
+  // Worley/cellular F1 search: nearest feature point across the 3x3
+  // neighborhood, not just the current cell. A naive "one random point
+  // per cell" scatter (what we had before) betrays its grid at a glance;
+  // searching neighbors lets points cluster and space irregularly like
+  // real dust or glints while keeping the same O(1) cost per pixel.
+  vec3 worley(vec2 p) {
+    vec2 cell = floor(p);
+    vec2 local = fract(p);
+    float minDist = 8.0;
+    float h = 0.0;
+    for (int y = -1; y <= 1; y++) {
+      for (int x = -1; x <= 1; x++) {
+        vec2 offset = vec2(float(x), float(y));
+        vec2 point = hash22(cell + offset);
+        float dist = length(offset + point - local);
+        if (dist < minDist) {
+          minDist = dist;
+          h = hash12(cell + offset);
+        }
+      }
+    }
+    return vec3(minDist, h, 0.0);
+  }
+
   // fine dust motes, drifting slowly upward; pinpricks, not bokeh
   float motes(vec2 uv, float t, float scale, float thresh) {
     vec2 p = uv * vec2(uRes.x / uRes.y, 1.0) * scale + vec2(0.0, -t * 0.012);
-    vec2 cell = floor(p);
-    float h = hash12(cell);
-    vec2 pos = hash22(cell) * 0.6 + 0.2;
-    float dist = length(fract(p) - pos);
+    vec3 w = worley(p);
+    float h = w.y;
     float twinkle = 0.55 + 0.45 * sin(t * (0.6 + h) + h * 6.2831);
-    return smoothstep(0.09, 0.0, dist) * twinkle * step(thresh, h);
+    return smoothstep(0.09, 0.0, w.x) * twinkle * step(thresh, h);
   }
 
   // glints that twinkle in place, varied in size and rhythm
   float sparkle(vec2 uv, float t, float scale) {
     vec2 p = uv * vec2(uRes.x / uRes.y, 1.0) * scale;
-    vec2 cell = floor(p);
-    float h = hash12(cell);
-    vec2 pos = hash22(cell) * 0.7 + 0.15;
-    float dist = length(fract(p) - pos);
+    vec3 w = worley(p);
+    float h = w.y;
     float twinkle = pow(0.5 + 0.5 * sin(t * (1.2 + h * 2.5) + h * 6.2831), 3.0);
-    float radius = 0.14 + 0.18 * h;
-    return smoothstep(radius, 0.0, dist) * twinkle * step(0.4, h);
+    float radius = 0.16 + 0.22 * h;
+    return smoothstep(radius, 0.0, w.x) * twinkle * step(0.4, h);
   }
 
   vec3 renderPhoto(sampler2D tex, vec2 texRes, float effect, float drift,
@@ -154,8 +199,8 @@ const fragmentShader = /* glsl */ `
       // clouds: traveling light + drifting mist veils + breathing sun + grade
       float sweep = fbm(tuv * 1.6 + vec2(t * 0.02, t * 0.006));
       col *= 0.92 + 0.18 * sweep;
-      float mist = fbm(tuv * 4.0 - vec2(t * 0.012, t * 0.016));
-      col += vec3(0.9, 0.93, 1.0) * smoothstep(0.5, 0.9, mist) * 0.2;
+      float mist = warpedFbm(tuv * 2.2 - vec2(t * 0.01, t * 0.014), t);
+      col += vec3(0.9, 0.93, 1.0) * smoothstep(0.45, 0.85, mist) * 0.22;
       float glow = exp(-length(tuv - vec2(0.7, 0.95)) * 1.7) * breathe;
       col += vec3(1.0, 0.93, 0.78) * glow * 0.38;
       col += vec3(1.0, 0.9, 0.7) * pow(lum, 2.0) * glow * 0.35;
@@ -210,9 +255,18 @@ const fragmentShader = /* glsl */ `
 
     // slight zoom as you enter the window
     float zoom = mix(1.0, 1.1, e);
-    vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
-    vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, vUv, uTime, zoom, e);
-    vec3 col = mix(colA, colB, uMix);
+    // uMix is a uniform (not per-pixel), so this branch is coherent across
+    // the whole draw call: outside the brief crossfade window we skip the
+    // second photo's full effect stack entirely rather than paying for it
+    // and discarding it via mix().
+    vec3 col;
+    if (uMix > 0.001) {
+      vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
+      vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, vUv, uTime, zoom, e);
+      col = mix(colA, colB, uMix);
+    } else {
+      col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
+    }
 
     // film grain
     float g = hash12(vUv * uRes + fract(uTime) * 100.0) - 0.5;
