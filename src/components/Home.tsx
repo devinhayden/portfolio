@@ -275,23 +275,28 @@ const fragmentShader = /* glsl */ `
     } else if (effect < 2.5) {
       // pond: raymarched-style wave field drives specular glints, post-
       // processed into discrete sparkle points, and textured with a
-      // frequency-modulated halftone screen; warm-brightness key holds
-      // it all to the sunlit water
-      float rays = lightShafts(tuv, vec2(0.8, 1.2), t, 7.0, 0.5);
-      col += vec3(1.0, 0.93, 0.7) * rays * 0.3 * breathe;
-      // true green-dominance: needs col.g to beat col.r too, not just col.b,
-      // otherwise warm, low-blue surfaces (sunlit rock, skin, the person's
-      // tan shirt) satisfy the old min(r,g)-b key just as well as water does
-      float waterMask = smoothstep(0.15, 0.5, lum)
-        * smoothstep(-0.02, 0.05, col.g - col.r)
-        * smoothstep(0.02, 0.15, col.g - col.b);
+      // frequency-modulated halftone screen; a geometric mask (below)
+      // holds it all to the water
+      // rays kept soft and faint here - the raymarched water field below
+      // carries this photo's visual interest, rays are just ambience
+      float rays = lightShafts(tuv, vec2(0.8, 1.2), t, 4.5, 0.25);
+      col += vec3(1.0, 0.93, 0.7) * rays * 0.16 * breathe;
+      // color keying kept leaking onto warm, low-blue surfaces (rock, skin,
+      // the person's shirt) no matter how the thresholds were tuned - this
+      // photo's water sits in a fixed, known region of the frame, so an
+      // untextured elliptical mask in photo space isolates it far more
+      // reliably than any color heuristic
+      vec2 waterCenter = vec2(0.4, 0.56);
+      vec2 waterRadius = vec2(0.55, 0.25);
+      float waterDist = length((tuv - waterCenter) / waterRadius);
+      float waterMask = smoothstep(1.3, 0.7, waterDist);
 
       vec2 wp = suv * vec2(uRes.x / uRes.y, 1.0) * 3.4;
       float wt = t * 0.3;
       float wh = waterHeight(wp, wt);
       vec3 wn = waterNormal(wp, wt, wh);
       vec3 lightDir = normalize(vec3(0.4, 0.7, 0.45));
-      float spec = pow(max(dot(wn, normalize(lightDir + vec3(0.0, 0.0, 1.0))), 0.0), 130.0);
+      float spec = pow(max(dot(wn, normalize(lightDir + vec3(0.0, 0.0, 1.0))), 0.0), 55.0);
 
       // the chop shows through as a soft living shimmer on the water itself
       col += (wh - 0.7) * 0.1 * waterMask;
