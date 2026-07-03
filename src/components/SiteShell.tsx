@@ -11,8 +11,10 @@ import {
 } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { PeekWindowContext } from "./peek-window-context";
 
 /* Per-photo treatment: `effect` selects the shader's light pass, `drift`
    is the dreamlike uv-warp amount (only the clouds want it), and `tint`
@@ -20,10 +22,11 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
    faint echo of its mood, close enough to the base cream that it reads
    as light spilling from the window rather than a color change. */
 const PHOTOS = [
-  { src: "/photos/1.jpg", effect: 0, drift: 0.01, tint: "#ecece9" }, // clouds, cool
+  { src: "/photos/1.jpg", effect: 0, drift: 0.02, tint: "#ecece9" }, // clouds, cool
   { src: "/photos/2.jpg", effect: 1, drift: 0, tint: "#edece2" }, // bamboo, sage
   { src: "/photos/4.jpg", effect: 3, drift: 0, tint: "#f2ebdd" }, // highway, gold
 ];
+const BASE_BACKGROUND = "#f3eee5";
 
 const CROSSFADE_SECONDS = 0.6;
 const SNAP_IDLE_MS = 250;
@@ -459,7 +462,6 @@ function SceneLoader({
   ...sceneProps
 }: {
   squareRef: RefObject<HTMLDivElement | null>;
-  chromeRef: RefObject<HTMLDivElement | null>;
   progressRef: MutableRefObject<ProgressState>;
   controllerRef: MutableRefObject<PhotoController | null>;
   parallaxRef: MutableRefObject<ParallaxState>;
@@ -496,7 +498,6 @@ function SceneLoader({
 
 function Scene({
   squareRef,
-  chromeRef,
   progressRef,
   controllerRef,
   parallaxRef,
@@ -505,7 +506,6 @@ function Scene({
   onReady,
 }: {
   squareRef: RefObject<HTMLDivElement | null>;
-  chromeRef: RefObject<HTMLDivElement | null>;
   progressRef: MutableRefObject<ProgressState>;
   controllerRef: MutableRefObject<PhotoController | null>;
   parallaxRef: MutableRefObject<ParallaxState>;
@@ -629,13 +629,6 @@ function Scene({
         f.active = false;
       }
     }
-
-    const chrome = chromeRef.current;
-    if (chrome) {
-      const opacity = 1 - smooth01(p.current / CHROME_FADE_END);
-      chrome.style.opacity = opacity.toFixed(3);
-      chrome.style.pointerEvents = opacity < 0.4 ? "none" : "auto";
-    }
   });
   /* eslint-enable react-hooks/immutability */
 
@@ -653,10 +646,16 @@ const NAV_LINKS = [
   { href: "/about", label: "About" },
 ];
 
-export default function Home() {
+export default function SiteShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
+  const isHome = pathname === "/";
   const squareRef = useRef<HTMLDivElement>(null);
-  const chromeRef = useRef<HTMLDivElement>(null);
+  const homeChromeRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<PhotoController | null>(null);
   const progressRef = useRef<ProgressState>({
     target: 0,
@@ -669,6 +668,44 @@ export default function Home() {
   const [activePhoto, setActivePhoto] = useState(0);
   const onPhotoChange = useCallback((index: number) => setActivePhoto(index), []);
 
+  const goToPhoto = useCallback((dir: 1 | -1) => {
+    controllerRef.current?.go(dir);
+  }, []);
+
+  // Footer and the Home page's own content (label/arrows/square/tagline)
+  // both fade out together as you scroll into the window, reading the
+  // live progress value directly each frame - separate from Scene's
+  // useFrame (which only runs shader uniform updates) since these are
+  // plain DOM nodes, not part of the R3F tree.
+  useEffect(() => {
+    let raf: number;
+    const tick = () => {
+      const opacity = 1 - smooth01(progressRef.current.current / CHROME_FADE_END);
+      const pointerEvents = opacity < 0.4 ? "none" : "auto";
+      if (footerRef.current) {
+        footerRef.current.style.opacity = opacity.toFixed(3);
+        footerRef.current.style.pointerEvents = pointerEvents;
+      }
+      if (homeChromeRef.current) {
+        homeChromeRef.current.style.opacity = opacity.toFixed(3);
+        homeChromeRef.current.style.pointerEvents = pointerEvents;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // reset to a clean rest state whenever leaving home, so returning always
+  // shows the window closed rather than mid-scroll
+  useEffect(() => {
+    if (!isHome) {
+      const p = progressRef.current;
+      p.target = 0;
+      p.current = 0;
+    }
+  }, [isHome]);
+
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       const px = parallaxRef.current;
@@ -680,6 +717,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!isHome) return;
     const p = progressRef.current;
     const onWheel = (e: WheelEvent) => {
       p.target = clamp01(p.target + e.deltaY / 1400);
@@ -704,107 +742,96 @@ export default function Home() {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
     };
-  }, []);
+  }, [isHome]);
+
+  const contextValue = useMemo(
+    () => ({ squareRef, homeChromeRef, photosReady, goToPhoto }),
+    [photosReady, goToPhoto],
+  );
 
   return (
-    <div
-      className="h-screen overflow-hidden text-foreground transition-colors duration-[1200ms] ease-out"
-      style={{ backgroundColor: PHOTOS[activePhoto].tint }}
-    >
-      {/* Paper-grain texture over the page fill only. Sits at z-0 below the
-          canvas (z-10); the opaque photo window covers it, so the texture
-          never touches the images themselves. Soft-light kept the page too
-          flat - the texture's own contrast is too low for that blend mode
-          to register. Back to multiply (which reads the grain clearly) but
-          at low opacity so it doesn't drag brightness down like before. */}
+    <PeekWindowContext.Provider value={contextValue}>
       <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-20 mix-blend-multiply"
-        style={{
-          backgroundImage: "url(/texture.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-      <div className="fixed inset-0 z-10">
-        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]}>
-          <SceneLoader
-            squareRef={squareRef}
-            chromeRef={chromeRef}
-            progressRef={progressRef}
-            controllerRef={controllerRef}
-            parallaxRef={parallaxRef}
-            onPhotoChange={onPhotoChange}
-            onReady={onPhotosReady}
-          />
-        </Canvas>
-      </div>
+        className="h-screen overflow-hidden text-foreground transition-colors duration-[1200ms] ease-out"
+        style={{ backgroundColor: isHome ? PHOTOS[activePhoto].tint : BASE_BACKGROUND }}
+      >
+        {/* Paper-grain texture over the page fill only. Sits at z-0 below
+            the canvas (z-10); the opaque photo window covers it, so the
+            texture never touches the images themselves. */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-0 opacity-20 mix-blend-multiply"
+          style={{
+            backgroundImage: "url(/texture.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
 
-      <div ref={chromeRef} className="relative z-20 flex h-full flex-col">
-        <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-24">
-          <p className="font-mono text-xs uppercase text-neutral-500">
-            Scroll to take a peek
-          </p>
-
-          <div className="flex items-center gap-4 sm:gap-14 md:gap-20">
-            <button
-              type="button"
-              aria-label="Previous photo"
-              onClick={() => controllerRef.current?.go(-1)}
-              className="shrink-0 text-neutral-400 transition-colors hover:text-neutral-700"
-            >
-              <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
-                <path d="M10 0L0 8L10 16V0Z" fill="currentColor" />
-              </svg>
-            </button>
-
-            <div
-              ref={squareRef}
-              className="h-52 w-52 shrink-0 sm:h-64 sm:w-64 md:h-72 md:w-72"
-              style={{ background: photosReady ? "transparent" : "#ffffff" }}
+        {/* The canvas stays mounted across every route - unmounting and
+            remounting it would re-fetch and re-decode all four photo
+            textures and reinit the WebGL context on every nav. Only its
+            opacity toggles, so it's an instant, free show/hide. */}
+        <div
+          className="fixed inset-0 z-10 transition-opacity duration-500 ease-out"
+          style={{
+            opacity: isHome ? 1 : 0,
+            pointerEvents: isHome ? "auto" : "none",
+          }}
+        >
+          <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]}>
+            <SceneLoader
+              squareRef={squareRef}
+              progressRef={progressRef}
+              controllerRef={controllerRef}
+              parallaxRef={parallaxRef}
+              onPhotoChange={onPhotoChange}
+              onReady={onPhotosReady}
             />
+          </Canvas>
+        </div>
 
-            <button
-              type="button"
-              aria-label="Next photo"
-              onClick={() => controllerRef.current?.go(1)}
-              className="shrink-0 text-neutral-400 transition-colors hover:text-neutral-700"
-            >
-              <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
-                <path d="M0 0L10 8L0 16V0Z" fill="currentColor" />
-              </svg>
-            </button>
+        <div className="relative z-20 flex h-full flex-col">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: -16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 16 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="flex flex-1 flex-col"
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          <p className="max-w-xs text-center font-serif text-md font-medium leading-relaxed text-foreground sm:max-w-sm">
-            Devin is daydreaming about a finished portfolio. Until it&apos;s
-            real: a look at his work, and a few scenes he&apos;s captured.
-          </p>
-     
-     
-        </main>
-
-        <footer className="flex items-center justify-center gap-20 pb-14 font-serif text-sm text-neutral-500">
-          {NAV_LINKS.map(({ href, label }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={
-                  active
-                    ? "text-foreground underline underline-offset-4 decoration-neutral-400"
-                    : "transition-colors hover:text-neutral-800"
-                }
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </footer>
+          <footer
+            ref={footerRef}
+            className="flex items-center justify-center gap-20 pb-14 font-serif text-sm text-neutral-500"
+          >
+            {NAV_LINKS.map(({ href, label }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={
+                    active
+                      ? "text-foreground underline underline-offset-4 decoration-neutral-400"
+                      : "transition-colors hover:text-neutral-800"
+                  }
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </footer>
+        </div>
       </div>
-    </div>
+    </PeekWindowContext.Provider>
   );
 }

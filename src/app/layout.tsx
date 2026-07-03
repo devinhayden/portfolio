@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
+import SiteShell from "@/components/SiteShell";
 import "./globals.css";
 
 const geistMono = Geist_Mono({
@@ -26,7 +27,9 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=rowan@300,301,400,401,500,501,600,601,700,701&display=swap"
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SiteShell>{children}</SiteShell>
+      </body>
     </html>
   );
 }
