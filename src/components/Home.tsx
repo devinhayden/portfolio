@@ -16,7 +16,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 /* Per-photo treatment: `effect` selects the shader's light pass,
    `drift` is the dreamlike uv-warp amount (only the clouds want it). */
 const PHOTOS = [
-  { src: "/photos/1.jpg", effect: 0, drift: 0.009 }, // clouds
+  { src: "/photos/1.jpg", effect: 0, drift: 0.006 }, // clouds
   { src: "/photos/2.jpg", effect: 1, drift: 0 }, // bamboo
   { src: "/photos/4.jpg", effect: 3, drift: 0 }, // highway
 ];
@@ -251,8 +251,8 @@ const fragmentShader = /* glsl */ `
     // per-photo dreamlike drift (clouds only), stronger once inside;
     // lower frequency reads as a broad, sweeping sway rather than jitter
     vec2 uv = suv + drift * (0.7 + 0.9 * e) * vec2(
-      sin(suv.y * 3.5 + t * 0.45),
-      cos(suv.x * 3.0 + t * 0.38)
+      sin(suv.y * 3.5 + t * 0.16),
+      cos(suv.x * 3.0 + t * 0.13)
     );
     vec2 tuv = coverUv(uv, texRes, zoom);
 
@@ -268,9 +268,9 @@ const fragmentShader = /* glsl */ `
 
     if (effect < 0.5) {
       // clouds: traveling light + drifting mist veils + breathing sun + grade
-      float sweep = fbm(tuv * 1.6 + vec2(t * 0.035, t * 0.012));
+      float sweep = fbm(tuv * 1.6 + vec2(t * 0.022, t * 0.008));
       col *= 0.92 + 0.18 * sweep;
-      float mist = warpedFbm(tuv * 2.2 - vec2(t * 0.02, t * 0.026), t);
+      float mist = warpedFbm(tuv * 2.2 - vec2(t * 0.012, t * 0.016), t);
       col += vec3(0.9, 0.93, 1.0) * smoothstep(0.45, 0.85, mist) * 0.22;
       float glow = exp(-length(tuv - vec2(0.7, 0.95)) * 1.7) * breathe;
       col += vec3(1.0, 0.93, 0.78) * glow * 0.38;
