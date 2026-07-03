@@ -10,6 +10,7 @@ import {
   type RefObject,
 } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 
@@ -620,7 +621,14 @@ function Scene({
   );
 }
 
+const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/work", label: "Work" },
+  { href: "/about", label: "About" },
+];
+
 export default function Home() {
+  const pathname = usePathname();
   const squareRef = useRef<HTMLDivElement>(null);
   const chromeRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<PhotoController | null>(null);
@@ -698,7 +706,7 @@ export default function Home() {
               type="button"
               aria-label="Previous photo"
               onClick={() => controllerRef.current?.go(-1)}
-              className="shrink-0 text-black transition-opacity hover:opacity-60"
+              className="shrink-0 text-neutral-400 transition-colors hover:text-neutral-700"
             >
               <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
                 <path d="M10 0L0 8L10 16V0Z" fill="currentColor" />
@@ -715,7 +723,7 @@ export default function Home() {
               type="button"
               aria-label="Next photo"
               onClick={() => controllerRef.current?.go(1)}
-              className="shrink-0 text-black transition-opacity hover:opacity-60"
+              className="shrink-0 text-neutral-400 transition-colors hover:text-neutral-700"
             >
               <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
                 <path d="M0 0L10 8L0 16V0Z" fill="currentColor" />
@@ -732,21 +740,23 @@ export default function Home() {
         </main>
 
         <footer className="flex items-center justify-center gap-20 pb-14 font-serif text-sm text-neutral-500">
-          <Link href="/" className="transition-colors hover:text-neutral-800">
-            Home
-          </Link>
-          <Link
-            href="/work"
-            className="transition-colors hover:text-neutral-800"
-          >
-            Work
-          </Link>
-          <Link
-            href="/about"
-            className="transition-colors hover:text-neutral-800"
-          >
-            About
-          </Link>
+          {NAV_LINKS.map(({ href, label }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={
+                  active
+                    ? "text-foreground underline underline-offset-4 decoration-neutral-400"
+                    : "transition-colors hover:text-neutral-800"
+                }
+              >
+                {label}
+              </Link>
+            );
+          })}
         </footer>
       </div>
     </div>
