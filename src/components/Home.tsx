@@ -389,23 +389,29 @@ const fragmentShader = /* glsl */ `
       col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
     }
 
-    // inner frame shadow: darkens a soft band just inside the window edge,
-    // more on the bottom-right than the top-left (as if lit from the upper
-    // left), so the photo reads as recessed within a frame with real depth
-    // rather than a flat cutout. Tied to the actual mask geometry (not a
-    // fixed DOM overlay) so it lines up at rest and through the early
-    // scroll-in; fades out entirely once the window has grown to fill the
-    // screen, where the idea of a "frame" no longer applies.
+    // inner beveled edge: makes the photo read as recessed within a frame.
+    // Rather than a radial gradient from the center (which pinches into a
+    // cone), each of the four walls is shaded independently like the faces
+    // of a real bevel. A per-axis proximity weights an outward in-plane
+    // normal, so along an edge the normal points straight out and at a
+    // corner it blends diagonally. Lit from the upper-left: the top and
+    // left faces catch a highlight, the bottom and right fall into shadow,
+    // and a uniform contact-shadow on all four edges seats the image in a
+    // recessed well. Tied to the mask geometry (not a DOM overlay) so it
+    // tracks through the early scroll, and faded out by e=0.4 since a
+    // full-screen photo has no frame to bevel.
     float frameFade = 1.0 - smoothstep(0.0, 0.4, e);
     if (frameFade > 0.001) {
-      float edgeWidth = min(halfSize.x, halfSize.y) * 0.14;
-      float edgeProximity = smoothstep(0.0, -edgeWidth, sd);
-      vec2 local = (p - center) / halfSize;
-      vec2 edgeDir = normalize(local + 1e-4);
-      float lightSide = dot(edgeDir, normalize(vec2(-0.6, 0.6)));
-      float shadowAmt = edgeProximity * frameFade * (0.22 - 0.1 * lightSide);
-      col *= 1.0 - clamp(shadowAmt, 0.0, 0.35);
-      col += vec3(1.0) * edgeProximity * frameFade * max(lightSide, 0.0) * 0.05;
+      float bevelWidth = min(halfSize.x, halfSize.y) * 0.16;
+      vec2 wallProx = smoothstep(-bevelWidth, 0.0, d); // per-wall: 1 at edge, 0 inside
+      float band = max(wallProx.x, wallProx.y);        // overall edge intensity
+      vec2 outward = sign(p - center);
+      vec2 n = normalize(outward * wallProx * wallProx + 1e-5);
+      float lit = dot(n, normalize(vec2(-0.7, 1.0)));  // upper-left key light
+      float ao = band * frameFade;
+      col *= 1.0 - ao * 0.14;                    // contact shadow, all edges
+      col *= 1.0 - ao * 0.26 * max(-lit, 0.0);   // deeper on bottom/right faces
+      col += ao * 0.13 * max(lit, 0.0);          // highlight on top/left faces
     }
 
     // film grain
