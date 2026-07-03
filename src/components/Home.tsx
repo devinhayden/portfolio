@@ -87,6 +87,18 @@ const fragmentShader = /* glsl */ `
     return v;
   }
 
+  // crepuscular rays: a converging fan of light shafts below a light
+  // source, drifting slowly sideways; computed in photo space so the
+  // rays stick to the scene
+  float lightShafts(vec2 uv, vec2 lightPos, float t, float freq, float soft) {
+    float denom = max(lightPos.y - uv.y, 0.1);
+    float fan = (uv.x - lightPos.x) / denom;
+    float n = fbm(vec2(fan * freq + t * 0.05, uv.y * 1.2));
+    float shaft = smoothstep(soft, 0.95, n);
+    float fall = exp(-max(lightPos.y - uv.y, 0.0) * 1.1);
+    return shaft * fall;
+  }
+
   vec2 coverUv(vec2 uv, vec2 texRes, float zoom) {
     float screenAspect = uRes.x / uRes.y;
     float texAspect = texRes.x / texRes.y;
@@ -96,26 +108,27 @@ const fragmentShader = /* glsl */ `
     return (uv - 0.5) * s / zoom + 0.5;
   }
 
-  // soft floating dust motes, drifting slowly upward
+  // fine dust motes, drifting slowly upward; pinpricks, not bokeh
   float motes(vec2 uv, float t, float scale, float thresh) {
-    vec2 p = uv * vec2(uRes.x / uRes.y, 1.0) * scale + vec2(0.0, -t * 0.018);
+    vec2 p = uv * vec2(uRes.x / uRes.y, 1.0) * scale + vec2(0.0, -t * 0.012);
     vec2 cell = floor(p);
     float h = hash12(cell);
     vec2 pos = hash22(cell) * 0.6 + 0.2;
     float dist = length(fract(p) - pos);
     float twinkle = 0.55 + 0.45 * sin(t * (0.6 + h) + h * 6.2831);
-    return smoothstep(0.16, 0.0, dist) * twinkle * step(thresh, h);
+    return smoothstep(0.09, 0.0, dist) * twinkle * step(thresh, h);
   }
 
-  // sharp glints that twinkle in place
+  // glints that twinkle in place, varied in size and rhythm
   float sparkle(vec2 uv, float t, float scale) {
     vec2 p = uv * vec2(uRes.x / uRes.y, 1.0) * scale;
     vec2 cell = floor(p);
     float h = hash12(cell);
     vec2 pos = hash22(cell) * 0.7 + 0.15;
     float dist = length(fract(p) - pos);
-    float twinkle = pow(0.5 + 0.5 * sin(t * (1.5 + h * 2.0) + h * 6.2831), 6.0);
-    return smoothstep(0.2, 0.0, dist) * twinkle * step(0.55, h);
+    float twinkle = pow(0.5 + 0.5 * sin(t * (1.2 + h * 2.5) + h * 6.2831), 3.0);
+    float radius = 0.14 + 0.18 * h;
+    return smoothstep(radius, 0.0, dist) * twinkle * step(0.4, h);
   }
 
   vec3 renderPhoto(sampler2D tex, vec2 texRes, float effect, float drift,
@@ -127,46 +140,57 @@ const fragmentShader = /* glsl */ `
     );
     vec2 tuv = coverUv(uv, texRes, zoom);
 
-    // highway: heat shimmer confined to the horizon band
+    // highway: faint heat shimmer hugging the horizon
     if (effect > 2.5) {
-      float band = exp(-pow((tuv.y - 0.42) * 7.0, 2.0));
-      tuv.x += band * 0.0018 * sin(tuv.y * 240.0 + t * 2.2);
+      float band = exp(-pow((tuv.y - 0.44) * 10.0, 2.0));
+      tuv.x += band * 0.0005 * sin(tuv.y * 150.0 + t * 1.3);
     }
 
     vec3 col = texture2D(tex, tuv).rgb;
     float lum = dot(col, vec3(0.299, 0.587, 0.114));
+    float breathe = 0.85 + 0.15 * sin(t * 0.19);
 
     if (effect < 0.5) {
-      // clouds: drifting haze veil + a soft breathing sun
-      float haze = fbm(tuv * 2.5 + vec2(t * 0.015, t * 0.008));
-      col += (haze - 0.5) * 0.12;
-      float sun = exp(-length(tuv - vec2(0.65, 0.85)) * 2.2)
-        * (0.85 + 0.15 * sin(t * 0.2));
-      col += vec3(1.0, 0.94, 0.82) * sun * 0.2;
+      // clouds: traveling light + drifting mist veils + breathing sun + grade
+      float sweep = fbm(tuv * 1.6 + vec2(t * 0.02, t * 0.006));
+      col *= 0.92 + 0.18 * sweep;
+      float mist = fbm(tuv * 4.0 - vec2(t * 0.012, t * 0.016));
+      col += vec3(0.9, 0.93, 1.0) * smoothstep(0.5, 0.9, mist) * 0.2;
+      float glow = exp(-length(tuv - vec2(0.7, 0.95)) * 1.7) * breathe;
+      col += vec3(1.0, 0.93, 0.78) * glow * 0.38;
+      col += vec3(1.0, 0.9, 0.7) * pow(lum, 2.0) * glow * 0.35;
+      col = mix(col, col * vec3(0.96, 1.0, 1.07), (1.0 - lum) * 0.25);
     } else if (effect < 1.5) {
-      // bamboo: god rays slanting through + floating dust motes
-      vec2 rayDir = normalize(vec2(0.35, 1.0));
-      float rayCoord = dot(suv, vec2(rayDir.y, -rayDir.x));
-      float ray = vnoise(vec2(rayCoord * 14.0 - t * 0.12, 0.5));
-      ray = pow(smoothstep(0.35, 0.95, ray), 2.0);
-      float fade = smoothstep(0.0, 0.7, suv.y);
-      col += vec3(1.0, 0.98, 0.85) * ray * fade * 0.18;
-      float dust = motes(suv, t, 24.0, 0.78) + motes(suv, t, 46.0, 0.85);
-      col += vec3(1.0, 0.98, 0.9) * dust * 0.35;
+      // bamboo: volumetric shafts + canopy halation + fine motes + green grade
+      float rays = lightShafts(tuv, vec2(0.55, 1.15), t, 9.0, 0.45);
+      col += vec3(1.0, 0.97, 0.8) * rays * 0.4 * breathe;
+      col += vec3(1.0, 0.98, 0.85) * pow(lum, 3.0) * 0.3;
+      float dust = motes(suv, t, 60.0, 0.82) + motes(suv, t, 110.0, 0.86);
+      col += vec3(1.0, 0.98, 0.9) * dust * 0.22;
+      col = mix(col, col * vec3(0.93, 1.05, 0.9), 0.22);
     } else if (effect < 2.5) {
-      // pond: glints keyed to the bright green water + a slow roaming sheen;
-      // the green-dominance key keeps sparkle off the rocks and the person
-      float waterMask = smoothstep(0.3, 0.65, lum)
-        * smoothstep(0.0, 0.08, col.g - max(col.r, col.b));
-      float glint = sparkle(suv, t, 90.0);
-      col += vec3(1.0, 0.98, 0.9) * glint * waterMask * 0.85;
-      float sheenCoord = dot(tuv, normalize(vec2(0.3, 1.0)));
-      float sheen = exp(-pow((sheenCoord - (0.45 + 0.18 * sin(t * 0.12))) * 6.0, 2.0));
-      col += vec3(0.9, 1.0, 0.85) * sheen * waterMask * 0.1;
+      // pond: gold shafts + living water shimmer + glints + halation + grade;
+      // warm-brightness key holds the effects to the sunlit water
+      float rays = lightShafts(tuv, vec2(0.8, 1.2), t, 7.0, 0.5);
+      col += vec3(1.0, 0.93, 0.7) * rays * 0.3 * breathe;
+      float waterMask = smoothstep(0.25, 0.55, lum)
+        * smoothstep(0.06, 0.22, min(col.r, col.g) - col.b);
+      float rip = vnoise(tuv * 42.0 + vec2(t * 0.24, t * 0.17));
+      col += (rip - 0.5) * 0.13 * waterMask;
+      float glint = sparkle(suv, t, 70.0);
+      col += vec3(1.0, 0.98, 0.9) * glint * waterMask * 1.2;
+      col += vec3(1.0, 0.97, 0.85) * pow(lum, 3.0) * 0.22;
+      col = mix(col, col * vec3(0.94, 1.04, 0.94), 0.2);
     } else {
-      // highway: golden-hour bloom breathing over the bright sky
-      float bloom = smoothstep(0.55, 0.85, lum) * (0.8 + 0.2 * sin(t * 0.1));
-      col += vec3(1.0, 0.85, 0.62) * bloom * 0.1;
+      // highway: golden horizon glow + light sweeping the hills + sky grade
+      float horizonGlow = exp(-pow((tuv.y - 0.46) * 3.0, 2.0));
+      col += vec3(1.0, 0.82, 0.55) * horizonGlow * 0.2 * breathe;
+      float ground = smoothstep(0.55, 0.35, tuv.y);
+      float sweep = fbm(tuv * vec2(2.2, 1.4) + vec2(t * 0.03, 0.0));
+      col *= 1.0 + (sweep - 0.5) * 0.16 * ground;
+      float sky = smoothstep(0.42, 0.6, tuv.y);
+      col = mix(col, col * vec3(1.09, 0.99, 0.87), sky * 0.45);
+      col += vec3(1.0, 0.9, 0.7) * pow(lum, 3.0) * 0.2;
     }
 
     return col;
