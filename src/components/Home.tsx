@@ -247,7 +247,7 @@ const fragmentShader = /* glsl */ `
   }
 
   vec3 renderPhoto(sampler2D tex, vec2 texRes, float effect, float drift,
-                   vec2 suv, float t, float zoom, float e) {
+                   vec2 suv, float t, float zoom, float e, float frost) {
     // per-photo dreamlike drift (clouds only), stronger once inside;
     // lower frequency reads as a broad, sweeping sway rather than jitter
     vec2 uv = suv + drift * (0.7 + 0.9 * e) * vec2(
@@ -262,7 +262,24 @@ const fragmentShader = /* glsl */ `
       tuv.x += band * 0.0005 * sin(tuv.y * 150.0 + t * 1.3);
     }
 
-    vec3 col = texture2D(tex, tuv).rgb;
+    // frosted glass: when frost > 0 (near the resting window), scatter a
+    // few texture taps around a per-pixel rotated kernel so the photo
+    // reads as ground glass rather than a clean blur. frost is a function
+    // of uProgress only, so this branch is coherent across the draw call.
+    vec3 col;
+    if (frost > 0.001) {
+      float rad = frost * 0.016;
+      float a = hash12(vUv * uRes + fract(t) * 50.0) * 6.2831;
+      vec2 r = vec2(cos(a), sin(a)) * rad;
+      vec2 rp = vec2(-r.y, r.x);
+      col  = texture2D(tex, tuv).rgb * 0.30;
+      col += texture2D(tex, tuv + r).rgb * 0.175;
+      col += texture2D(tex, tuv - r).rgb * 0.175;
+      col += texture2D(tex, tuv + rp).rgb * 0.175;
+      col += texture2D(tex, tuv - rp).rgb * 0.175;
+    } else {
+      col = texture2D(tex, tuv).rgb;
+    }
     float lum = dot(col, vec3(0.299, 0.587, 0.114));
     float breathe = 0.85 + 0.15 * sin(t * 0.19);
 
@@ -376,17 +393,30 @@ const fragmentShader = /* glsl */ `
 
     // slight zoom as you enter the window
     float zoom = mix(1.0, 1.1, e);
+    // frosted-glass amount: heavy at the resting window, clearing to a
+    // sharp photo as you enter (gone by ~32% in), so the peek reads as
+    // misted glass you then step through
+    float frost = 1.0 - smoothstep(0.0, 0.32, e);
     // uMix is a uniform (not per-pixel), so this branch is coherent across
     // the whole draw call: outside the brief crossfade window we skip the
     // second photo's full effect stack entirely rather than paying for it
     // and discarding it via mix().
     vec3 col;
     if (uMix > 0.001) {
-      vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
-      vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, vUv, uTime, zoom, e);
+      vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e, frost);
+      vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, vUv, uTime, zoom, e, frost);
       col = mix(colA, colB, uMix);
     } else {
-      col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
+      col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e, frost);
+    }
+
+    // frosted-glass surface: a milky wash lifts the blacks like light
+    // scattering in the glass, and a soft diagonal sheen reads as a
+    // reflection catching the pane. Both fade out with frost.
+    if (frost > 0.001) {
+      col = mix(col, col * 0.82 + vec3(0.80, 0.83, 0.88) * 0.18, frost * 0.5);
+      float sheen = smoothstep(0.35, 0.0, abs(vUv.x - vUv.y - 0.15));
+      col += vec3(1.0) * sheen * frost * 0.05;
     }
 
     // inner beveled edge: makes the photo read as recessed within a frame.
@@ -412,6 +442,13 @@ const fragmentShader = /* glsl */ `
       col *= 1.0 - ao * 0.14;                    // contact shadow, all edges
       col *= 1.0 - ao * 0.26 * max(-lit, 0.0);   // deeper on bottom/right faces
       col += ao * 0.13 * max(lit, 0.0);          // highlight on top/left faces
+
+      // matched hairline stroke: a thin lip right at the very edge, lit by
+      // the same upper-left key so it reads as the crisp outer rim of the
+      // bevel (top/left catch light, bottom/right darken) rather than a
+      // flat UI border
+      float lip = smoothstep(-1.5, 0.0, sd);     // ~1.5px band hugging the edge
+      col += ao * lip * lit * 0.18;              // brightens or darkens by side
     }
 
     // film grain
