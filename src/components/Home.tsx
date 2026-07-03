@@ -247,7 +247,7 @@ const fragmentShader = /* glsl */ `
   }
 
   vec3 renderPhoto(sampler2D tex, vec2 texRes, float effect, float drift,
-                   vec2 suv, float t, float zoom, float e, float frost) {
+                   vec2 suv, float t, float zoom, float e) {
     // per-photo dreamlike drift (clouds only), stronger once inside;
     // lower frequency reads as a broad, sweeping sway rather than jitter
     vec2 uv = suv + drift * (0.7 + 0.9 * e) * vec2(
@@ -262,24 +262,7 @@ const fragmentShader = /* glsl */ `
       tuv.x += band * 0.0005 * sin(tuv.y * 150.0 + t * 1.3);
     }
 
-    // frosted glass: when frost > 0 (near the resting window), scatter a
-    // few texture taps around a per-pixel rotated kernel so the photo
-    // reads as ground glass rather than a clean blur. frost is a function
-    // of uProgress only, so this branch is coherent across the draw call.
-    vec3 col;
-    if (frost > 0.001) {
-      float rad = frost * 0.016;
-      float a = hash12(vUv * uRes + fract(t) * 50.0) * 6.2831;
-      vec2 r = vec2(cos(a), sin(a)) * rad;
-      vec2 rp = vec2(-r.y, r.x);
-      col  = texture2D(tex, tuv).rgb * 0.30;
-      col += texture2D(tex, tuv + r).rgb * 0.175;
-      col += texture2D(tex, tuv - r).rgb * 0.175;
-      col += texture2D(tex, tuv + rp).rgb * 0.175;
-      col += texture2D(tex, tuv - rp).rgb * 0.175;
-    } else {
-      col = texture2D(tex, tuv).rgb;
-    }
+    vec3 col = texture2D(tex, tuv).rgb;
     float lum = dot(col, vec3(0.299, 0.587, 0.114));
     float breathe = 0.85 + 0.15 * sin(t * 0.19);
 
@@ -393,62 +376,37 @@ const fragmentShader = /* glsl */ `
 
     // slight zoom as you enter the window
     float zoom = mix(1.0, 1.1, e);
-    // frosted-glass amount: heavy at the resting window, clearing to a
-    // sharp photo as you enter (gone by ~32% in), so the peek reads as
-    // misted glass you then step through
-    float frost = 1.0 - smoothstep(0.0, 0.32, e);
     // uMix is a uniform (not per-pixel), so this branch is coherent across
     // the whole draw call: outside the brief crossfade window we skip the
     // second photo's full effect stack entirely rather than paying for it
     // and discarding it via mix().
     vec3 col;
     if (uMix > 0.001) {
-      vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e, frost);
-      vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, vUv, uTime, zoom, e, frost);
+      vec3 colA = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
+      vec3 colB = renderPhoto(uTexB, uTexResB, uEffectB, uDriftB, vUv, uTime, zoom, e);
       col = mix(colA, colB, uMix);
     } else {
-      col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e, frost);
+      col = renderPhoto(uTexA, uTexResA, uEffectA, uDriftA, vUv, uTime, zoom, e);
     }
 
-    // frosted-glass surface: a milky wash lifts the blacks like light
-    // scattering in the glass, and a soft diagonal sheen reads as a
-    // reflection catching the pane. Both fade out with frost.
-    if (frost > 0.001) {
-      col = mix(col, col * 0.82 + vec3(0.80, 0.83, 0.88) * 0.18, frost * 0.5);
-      float sheen = smoothstep(0.35, 0.0, abs(vUv.x - vUv.y - 0.15));
-      col += vec3(1.0) * sheen * frost * 0.05;
-    }
-
-    // inner beveled edge: makes the photo read as recessed within a frame.
-    // Rather than a radial gradient from the center (which pinches into a
-    // cone), each of the four walls is shaded independently like the faces
-    // of a real bevel. A per-axis proximity weights an outward in-plane
-    // normal, so along an edge the normal points straight out and at a
-    // corner it blends diagonally. Lit from the upper-left: the top and
-    // left faces catch a highlight, the bottom and right fall into shadow,
-    // and a uniform contact-shadow on all four edges seats the image in a
-    // recessed well. Tied to the mask geometry (not a DOM overlay) so it
-    // tracks through the early scroll, and faded out by e=0.4 since a
-    // full-screen photo has no frame to bevel.
+    // inner recessed edge: an even inset shadow around the whole perimeter
+    // seats the photo in a well with real depth. The darkening keys off sd
+    // (distance to the nearest wall, equal on all four sides) so every edge
+    // reads the same, rather than pooling in one corner. A whisper of
+    // directional shading (upper-left key) adds realism without biasing the
+    // depth toward any side. Tied to the mask geometry so it tracks through
+    // the early scroll, and faded out by e=0.4 since a full-screen photo
+    // has no frame to recess.
     float frameFade = 1.0 - smoothstep(0.0, 0.4, e);
     if (frameFade > 0.001) {
-      float bevelWidth = min(halfSize.x, halfSize.y) * 0.16;
-      vec2 wallProx = smoothstep(-bevelWidth, 0.0, d); // per-wall: 1 at edge, 0 inside
-      float band = max(wallProx.x, wallProx.y);        // overall edge intensity
-      vec2 outward = sign(p - center);
-      vec2 n = normalize(outward * wallProx * wallProx + 1e-5);
-      float lit = dot(n, normalize(vec2(-0.7, 1.0)));  // upper-left key light
-      float ao = band * frameFade;
-      col *= 1.0 - ao * 0.14;                    // contact shadow, all edges
-      col *= 1.0 - ao * 0.26 * max(-lit, 0.0);   // deeper on bottom/right faces
-      col += ao * 0.13 * max(lit, 0.0);          // highlight on top/left faces
-
-      // matched hairline stroke: a thin lip right at the very edge, lit by
-      // the same upper-left key so it reads as the crisp outer rim of the
-      // bevel (top/left catch light, bottom/right darken) rather than a
-      // flat UI border
-      float lip = smoothstep(-1.5, 0.0, sd);     // ~1.5px band hugging the edge
-      col += ao * lip * lit * 0.18;              // brightens or darkens by side
+      float bevelWidth = min(halfSize.x, halfSize.y) * 0.18;
+      float edge = smoothstep(-bevelWidth, 0.0, sd); // 1 at edge, 0 inside
+      float ao = edge * frameFade;
+      col *= 1.0 - ao * 0.30;                    // even inset shadow, all sides
+      vec2 wallProx = smoothstep(-bevelWidth, 0.0, d);
+      vec2 n = normalize(sign(p - center) * wallProx * wallProx + 1e-5);
+      float lit = dot(n, normalize(vec2(-0.7, 1.0)));
+      col += ao * 0.05 * lit;                    // subtle, symmetric light cue
     }
 
     // film grain
@@ -703,6 +661,20 @@ export default function Home() {
 
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground">
+      {/* Paper-grain texture over the page fill only. Sits at z-0 below the
+          canvas (z-10); the opaque photo window covers it, so the texture
+          never touches the images themselves. Multiply blend lets the dark
+          grain settle into the light background without darkening it flatly. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 opacity-30 mix-blend-multiply"
+        style={{
+          backgroundImage: "url(/texture.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
       <div className="fixed inset-0 z-10">
         <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]}>
           <SceneLoader
