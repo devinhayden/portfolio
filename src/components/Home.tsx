@@ -20,9 +20,9 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
    faint echo of its mood, close enough to the base cream that it reads
    as light spilling from the window rather than a color change. */
 const PHOTOS = [
-  { src: "/photos/1.jpg", effect: 0, drift: 0.006, tint: "#edeae4" }, // clouds, barely cool
-  { src: "/photos/2.jpg", effect: 1, drift: 0, tint: "#ece9e0" }, // bamboo, faint sage
-  { src: "/photos/4.jpg", effect: 3, drift: 0, tint: "#f1e8da" }, // highway, warm gold
+  { src: "/photos/1.jpg", effect: 0, drift: 0.006, tint: "#ecece9" }, // clouds, cool
+  { src: "/photos/2.jpg", effect: 1, drift: 0, tint: "#edece2" }, // bamboo, sage
+  { src: "/photos/4.jpg", effect: 3, drift: 0, tint: "#f2ebdd" }, // highway, gold
 ];
 
 const CROSSFADE_SECONDS = 0.6;
@@ -713,11 +713,15 @@ export default function Home() {
     >
       {/* Paper-grain texture over the page fill only. Sits at z-0 below the
           canvas (z-10); the opaque photo window covers it, so the texture
-          never touches the images themselves. Multiply blend lets the dark
-          grain settle into the light background without darkening it flatly. */}
+          never touches the images themselves. Soft-light instead of
+          multiply: multiply darkens uniformly regardless of the overlay's
+          own tone, which was flattening the whole page toward gray. The
+          texture is itself a light paper scan, so soft-light lets its
+          bright areas lift the background and only its darker grain
+          flecks add contrast - texture without an overall dimming cast. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-30 mix-blend-multiply"
+        className="pointer-events-none fixed inset-0 z-0 opacity-50 mix-blend-soft-light"
         style={{
           backgroundImage: "url(/texture.jpg)",
           backgroundSize: "cover",
