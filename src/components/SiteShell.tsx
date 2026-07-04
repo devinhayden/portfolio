@@ -836,7 +836,7 @@ export default function SiteShell({
         <footer
           ref={footerRef}
           style={{ viewTransitionName: "site-nav" }}
-          className="fixed inset-x-0 bottom-10 z-30 flex justify-center font-serif text-sm text-neutral-500"
+          className="fixed inset-x-0 bottom-10 z-30 flex justify-center font-mono text-xs uppercase text-neutral-500"
         >
           <div className="flex items-center gap-1 rounded-lg border border-foreground/10 bg-background p-1.5">
             {NAV_LINKS.map(({ href, label }) => {
