@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  ViewTransition,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -11,26 +13,23 @@ import {
 } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "motion/react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { PhotoInfoTooltip } from "./PhotoInfoTooltip";
 import { PeekWindowContext } from "./peek-window-context";
 
 /* Per-photo treatment: `effect` selects the shader's light pass, `drift`
-   is the dreamlike uv-warp amount (only the clouds want it), and `tint`
-   is the ambient page-background wash while that photo is showing - a
-   faint echo of its mood, close enough to the base cream that it reads
-   as light spilling from the window rather than a color change. */
+   is the dreamlike uv-warp amount (only the clouds want it). */
 const PHOTOS = [
-  { src: "/photos/1.jpg", effect: 0, drift: 0.02, tint: "#ecece9" }, // clouds, cool
-  { src: "/photos/2.jpg", effect: 1, drift: 0, tint: "#edece2" }, // bamboo, sage
-  { src: "/photos/4.jpg", effect: 3, drift: 0, tint: "#f2ebdd" }, // highway, gold
+  { src: "/photos/1.jpg", effect: 0, drift: 0.02 }, // clouds
+  { src: "/photos/2.jpg", effect: 1, drift: 0 }, // bamboo
+  { src: "/photos/4.jpg", effect: 3, drift: 0 }, // highway
 ];
-const BASE_BACKGROUND = "#f3eee5";
 
 const CROSSFADE_SECONDS = 0.6;
 const SNAP_IDLE_MS = 250;
 const CHROME_FADE_END = 0.3; // progress at which the DOM UI is fully hidden
+const FULL_VIEW_THRESHOLD = 0.98; // progress at which the photo fills the viewport
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -465,7 +464,6 @@ function SceneLoader({
   progressRef: MutableRefObject<ProgressState>;
   controllerRef: MutableRefObject<PhotoController | null>;
   parallaxRef: MutableRefObject<ParallaxState>;
-  onPhotoChange: (index: number) => void;
   onReady: () => void;
 }) {
   const [textures, setTextures] = useState<THREE.Texture[] | null>(null);
@@ -501,7 +499,6 @@ function Scene({
   progressRef,
   controllerRef,
   parallaxRef,
-  onPhotoChange,
   textures,
   onReady,
 }: {
@@ -509,7 +506,6 @@ function Scene({
   progressRef: MutableRefObject<ProgressState>;
   controllerRef: MutableRefObject<PhotoController | null>;
   parallaxRef: MutableRefObject<ParallaxState>;
-  onPhotoChange: (index: number) => void;
   textures: THREE.Texture[];
   onReady: () => void;
 }) {
@@ -565,13 +561,12 @@ function Scene({
         uniforms.uDriftB.value = PHOTOS[f.index].drift;
         f.mix = 0;
         f.active = true;
-        onPhotoChange(f.index);
       },
     };
     return () => {
       controllerRef.current = null;
     };
-  }, [controllerRef, textures, uniforms, onPhotoChange]);
+  }, [controllerRef, textures, uniforms]);
 
   // keep the shader's rest rect aligned with the DOM square
   useEffect(() => {
@@ -656,6 +651,8 @@ export default function SiteShell({
   const squareRef = useRef<HTMLDivElement>(null);
   const homeChromeRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
+  const photoInfoRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<PhotoController | null>(null);
   const progressRef = useRef<ProgressState>({
     target: 0,
@@ -665,8 +662,6 @@ export default function SiteShell({
   const parallaxRef = useRef<ParallaxState>({ tx: 0, ty: 0, x: 0, y: 0 });
   const [photosReady, setPhotosReady] = useState(false);
   const onPhotosReady = useCallback(() => setPhotosReady(true), []);
-  const [activePhoto, setActivePhoto] = useState(0);
-  const onPhotoChange = useCallback((index: number) => setActivePhoto(index), []);
 
   const goToPhoto = useCallback((dir: 1 | -1) => {
     controllerRef.current?.go(dir);
@@ -690,6 +685,12 @@ export default function SiteShell({
         homeChromeRef.current.style.opacity = opacity.toFixed(3);
         homeChromeRef.current.style.pointerEvents = pointerEvents;
       }
+      if (photoInfoRef.current) {
+        const fullView =
+          progressRef.current.current >= FULL_VIEW_THRESHOLD ? 1 : 0;
+        photoInfoRef.current.style.opacity = fullView.toFixed(3);
+        photoInfoRef.current.style.pointerEvents = fullView ? "auto" : "none";
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -705,6 +706,16 @@ export default function SiteShell({
       p.current = 0;
     }
   }, [isHome]);
+
+  // The scroll container persists across navigation (it's part of the
+  // shell, not the page), so its scrollTop otherwise carries over from
+  // whatever page you were just on. Landing on a much shorter page with a
+  // large leftover scrollTop forces the browser to clamp it instantly,
+  // which is exactly the kind of hitch that reads as "jumpy" - reset
+  // before paint so every page always opens at its own top.
+  useLayoutEffect(() => {
+    scrollContainerRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
@@ -751,10 +762,7 @@ export default function SiteShell({
 
   return (
     <PeekWindowContext.Provider value={contextValue}>
-      <div
-        className="h-screen overflow-hidden text-foreground transition-colors duration-[1200ms] ease-out"
-        style={{ backgroundColor: isHome ? PHOTOS[activePhoto].tint : BASE_BACKGROUND }}
-      >
+      <div className="h-screen overflow-hidden bg-background text-foreground">
         {/* Paper-grain texture over the page fill only. Sits at z-0 below
             the canvas (z-10); the opaque photo window covers it, so the
             texture never touches the images themselves. */}
@@ -786,32 +794,51 @@ export default function SiteShell({
               progressRef={progressRef}
               controllerRef={controllerRef}
               parallaxRef={parallaxRef}
-              onPhotoChange={onPhotoChange}
               onReady={onPhotosReady}
             />
           </Canvas>
         </div>
 
-        <div className="relative z-20 flex h-full flex-col">
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={pathname}
-                initial={{ opacity: 0, y: -16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 16 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="flex flex-1 flex-col"
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+        {isHome ? <PhotoInfoTooltip containerRef={photoInfoRef} /> : null}
 
-          <footer
-            ref={footerRef}
-            className="flex items-center justify-center gap-20 pb-14 font-serif text-sm text-neutral-500"
+        <div className="relative z-20 flex h-full flex-col">
+          <div
+            ref={scrollContainerRef}
+            className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
           >
+            {/* Native browser View Transitions instead of a JS-animated
+                mount/unmount dance: the browser snapshots the old and new
+                DOM states itself and cross-fades them as a compositor
+                operation, so it can't desync from React's render timing
+                the way the old AnimatePresence coordination could. The
+                fade+shift keyframes live in globals.css, scoped to the
+                "page" view-transition name so they never touch the
+                persistent footer/gradient below. `key` has to live on the
+                ViewTransition itself, not a div inside it - SiteShell
+                persists across navigation, so without it React sees the
+                same instance getting new children rather than an
+                exit+enter pair worth animating. */}
+            <ViewTransition key={pathname} name="page" enter="auto" exit="auto">
+              <div className="flex flex-1 flex-col">{children}</div>
+            </ViewTransition>
+          </div>
+        </div>
+
+        {/* A small, self-contained card instead of a full-width bar: its
+            own solid fill and border give nav text a consistent backing
+            over the Work grid's busy thumbnails without needing to span
+            the whole viewport edge-to-edge. Same on every route.
+            Explicitly named and anchored (see globals.css)
+            so it's excluded from the page's view-transition entirely,
+            rather than riding along in the browser's default full-viewport
+            crossfade - that's what was making it fade out and back in on
+            every navigation despite never actually changing. */}
+        <footer
+          ref={footerRef}
+          style={{ viewTransitionName: "site-nav" }}
+          className="fixed inset-x-0 bottom-10 z-30 flex justify-center font-serif text-sm text-neutral-500"
+        >
+          <div className="flex items-center gap-1 rounded-lg border border-foreground/10 bg-background p-1.5">
             {NAV_LINKS.map(({ href, label }) => {
               const active = pathname === href;
               return (
@@ -820,17 +847,18 @@ export default function SiteShell({
                   href={href}
                   aria-current={active ? "page" : undefined}
                   className={
-                    active
-                      ? "text-foreground underline underline-offset-4 decoration-neutral-400"
-                      : "transition-colors hover:text-neutral-800"
+                    "rounded-md px-4 py-2 transition-colors " +
+                    (active
+                      ? "bg-foreground/8 text-foreground"
+                      : "hover:text-neutral-800")
                   }
                 >
                   {label}
                 </Link>
               );
             })}
-          </footer>
-        </div>
+          </div>
+        </footer>
       </div>
     </PeekWindowContext.Provider>
   );
