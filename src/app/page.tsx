@@ -68,11 +68,11 @@ function NavItem({ label, active }: { label: string; active?: boolean }) {
 
 export default function Home() {
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-16 overflow-hidden bg-[#f7f7f7] px-6 font-sans text-black">
-      <nav className="flex items-center gap-4 rounded-lg border border-black/10 p-2">
+    <div className="relative flex h-screen flex-col items-center justify-center gap-16 overflow-hidden bg-[#f7f7f7] px-6 font-sans text-black">
+      <nav className="absolute top-6 left-1/2 flex -translate-x-1/2 items-center gap-4 rounded-lg border border-black/10 p-2">
         <NavItem label="About" />
         <NavItem label="Work" active />
-        <NavItem label="Contact" />
+        <NavItem label="Reel" />
       </nav>
 
       <div className="flex flex-col items-center gap-[22px] text-center">
