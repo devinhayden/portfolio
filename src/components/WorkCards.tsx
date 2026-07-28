@@ -88,7 +88,13 @@ export function WorkCards({ projects }: { projects: Project[] }) {
                   />
                 </motion.div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 45%)",
+                }}
+              />
               <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-4">
                 <div className="flex items-center gap-2 whitespace-nowrap">
                   <span className="text-[16px] leading-[1.4] font-medium text-white">
