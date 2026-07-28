@@ -1,11 +1,46 @@
 import { WorkCards, type Project } from "@/components/WorkCards";
 
 const projects: Project[] = [
-  { title: "Apple Trips", status: "Concept", description: "iOS-native trip planning", image: "/appleTripsCover.png" },
-  { title: "Trimble", status: "Shipped", description: "Global construction tooling", image: "/trimbleCover.png" },
-  { title: "Voxel", status: "Shipped", description: "Voice AI for healthcare", image: "/voxelCover.png" },
-  { title: "Nova", status: "Shipped", description: "Offline international learning", image: "/novaCover.png" },
-  { title: "NRG Experiential", status: "Shipped", description: "Tech brand activations", image: "/nrgCover.png" },
+  {
+    title: "Apple Trips",
+    status: "Concept",
+    description: "iOS-native trip planning",
+    background: "/appleTripsCover.png",
+    mockup: "/appleTripUI.png",
+    mockupOffset: 0,
+  },
+  {
+    title: "Trimble",
+    status: "Shipped",
+    description: "Global construction tooling",
+    background: "/trimbleCover.png",
+    mockup: "/trimbleUI.png",
+    mockupOffset: 0,
+  },
+  {
+    title: "Voxel",
+    status: "Shipped",
+    description: "Voice AI for healthcare",
+    background: "/voxelCover.png",
+    mockup: "/voxelUI.png",
+    mockupOffset: 0,
+  },
+  {
+    title: "Nova",
+    status: "Shipped",
+    description: "Offline international learning",
+    background: "/novaCover.png",
+    mockup: "/novaUI.png",
+    mockupOffset: 0,
+  },
+  {
+    title: "NRG Experiential",
+    status: "Shipped",
+    description: "Tech brand activations",
+    background: "/nrgCover.png",
+    mockup: "/nrgUI.png",
+    mockupOffset: 0,
+  },
 ];
 
 function NavItem({ label, active }: { label: string; active?: boolean }) {

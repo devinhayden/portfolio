@@ -8,8 +8,17 @@ export type Project = {
   title: string;
   status: string;
   description: string;
-  image?: string;
+  background?: string;
+  mockup?: string;
+  /** Left position (px) of the mockup within the collapsed 200px card. */
+  mockupOffset?: number;
 };
+
+const CARD_EXPANDED_WIDTH = 600;
+const MOCKUP_WIDTH = 340;
+const MOCKUP_HEIGHT = 400;
+const MOCKUP_EXPANDED_LEFT = (CARD_EXPANDED_WIDTH - MOCKUP_WIDTH) / 2;
+const CARD_TRANSITION = { duration: 0.75, ease: [0.65, 0, 0.35, 1] as const };
 
 export function WorkCards({ projects }: { projects: Project[] }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -38,18 +47,38 @@ export function WorkCards({ projects }: { projects: Project[] }) {
             <motion.div
               key={project.title}
               onMouseEnter={() => setActiveIndex(index)}
-              animate={{ width: expanded ? 600 : 200 }}
-              transition={{ duration: 0.75, ease: [0.65, 0, 0.35, 1] }}
+              animate={{ width: expanded ? CARD_EXPANDED_WIDTH : 200 }}
+              transition={CARD_TRANSITION}
               className="relative h-[456px] shrink-0 overflow-hidden rounded-lg bg-[#d9d9d9]"
             >
-              {project.image && (
+              {project.background && (
                 <Image
-                  src={project.image}
-                  alt={project.title}
+                  src={project.background}
+                  alt=""
                   fill
                   sizes="600px"
-                  className="object-cover object-left"
+                  className="object-cover"
                 />
+              )}
+              {project.mockup && (
+                <motion.div
+                  animate={{
+                    left: expanded
+                      ? MOCKUP_EXPANDED_LEFT
+                      : (project.mockupOffset ?? 0),
+                  }}
+                  transition={CARD_TRANSITION}
+                  className="absolute top-1/2 -translate-y-1/2"
+                  style={{ width: MOCKUP_WIDTH, height: MOCKUP_HEIGHT }}
+                >
+                  <Image
+                    src={project.mockup}
+                    alt={`${project.title} interface`}
+                    fill
+                    sizes={`${MOCKUP_WIDTH}px`}
+                    className="object-contain"
+                  />
+                </motion.div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-4">
