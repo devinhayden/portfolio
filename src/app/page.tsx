@@ -7,6 +7,8 @@ const projects: Project[] = [
     description: "iOS-native trip planning",
     background: "/appleTripsCover.png",
     mockup: "/appleTripUI.png",
+    mockupWidth: 529,
+    mockupHeight: 705,
     mockupOffset: 0,
   },
   {
@@ -15,6 +17,8 @@ const projects: Project[] = [
     description: "Global construction tooling",
     background: "/trimbleCover.png",
     mockup: "/trimbleUI.png",
+    mockupWidth: 946,
+    mockupHeight: 688,
     mockupOffset: 0,
   },
   {
@@ -23,6 +27,8 @@ const projects: Project[] = [
     description: "Voice AI for healthcare",
     background: "/voxelCover.png",
     mockup: "/voxelUI.png",
+    mockupWidth: 635,
+    mockupHeight: 688,
     mockupOffset: 0,
   },
   {
@@ -31,6 +37,8 @@ const projects: Project[] = [
     description: "Offline international learning",
     background: "/novaCover.png",
     mockup: "/novaUI.png",
+    mockupWidth: 910,
+    mockupHeight: 777,
     mockupOffset: 0,
   },
   {
@@ -39,6 +47,8 @@ const projects: Project[] = [
     description: "Tech brand activations",
     background: "/nrgCover.png",
     mockup: "/nrgUI.png",
+    mockupWidth: 938,
+    mockupHeight: 656,
     mockupOffset: 0,
   },
 ];

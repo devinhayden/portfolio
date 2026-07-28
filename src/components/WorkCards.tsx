@@ -10,15 +10,21 @@ export type Project = {
   description: string;
   background?: string;
   mockup?: string;
+  /** Intrinsic pixel size of the mockup file, used to render every mockup at the same height. */
+  mockupWidth?: number;
+  mockupHeight?: number;
   /** Left position (px) of the mockup within the collapsed 200px card. */
   mockupOffset?: number;
 };
 
 const CARD_EXPANDED_WIDTH = 600;
-const MOCKUP_WIDTH = 340;
 const MOCKUP_HEIGHT = 400;
-const MOCKUP_EXPANDED_LEFT = (CARD_EXPANDED_WIDTH - MOCKUP_WIDTH) / 2;
 const CARD_TRANSITION = { duration: 0.75, ease: [0.65, 0, 0.35, 1] as const };
+
+function getMockupDisplayWidth(project: Project) {
+  if (!project.mockupWidth || !project.mockupHeight) return MOCKUP_HEIGHT;
+  return (MOCKUP_HEIGHT * project.mockupWidth) / project.mockupHeight;
+}
 
 export function WorkCards({ projects }: { projects: Project[] }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -43,6 +49,8 @@ export function WorkCards({ projects }: { projects: Project[] }) {
       <div className="flex w-max gap-[12px] px-[63px]">
         {projects.map((project, index) => {
           const expanded = index === activeIndex;
+          const mockupWidth = getMockupDisplayWidth(project);
+          const mockupExpandedLeft = (CARD_EXPANDED_WIDTH - mockupWidth) / 2;
           return (
             <motion.div
               key={project.title}
@@ -64,18 +72,18 @@ export function WorkCards({ projects }: { projects: Project[] }) {
                 <motion.div
                   animate={{
                     left: expanded
-                      ? MOCKUP_EXPANDED_LEFT
+                      ? mockupExpandedLeft
                       : (project.mockupOffset ?? 0),
                   }}
                   transition={CARD_TRANSITION}
                   className="absolute top-1/2 -translate-y-1/2"
-                  style={{ width: MOCKUP_WIDTH, height: MOCKUP_HEIGHT }}
+                  style={{ width: mockupWidth, height: MOCKUP_HEIGHT }}
                 >
                   <Image
                     src={project.mockup}
                     alt={`${project.title} interface`}
                     fill
-                    sizes={`${MOCKUP_WIDTH}px`}
+                    sizes={`${Math.round(mockupWidth)}px`}
                     className="object-contain"
                   />
                 </motion.div>
