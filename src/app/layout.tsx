@@ -10,9 +10,11 @@ const hankenGrotesk = Hanken_Grotesk({
 });
 
 const rowan = localFont({
-  src: "./fonts/Rowan-Regular.woff2",
+  src: [
+    { path: "./fonts/Rowan-Regular.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/Rowan-Medium.woff2", weight: "500", style: "normal" },
+  ],
   variable: "--font-rowan",
-  weight: "400",
   display: "swap",
 });
 
