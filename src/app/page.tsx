@@ -1,3 +1,4 @@
+import { ContactLine } from "@/components/ContactLine";
 import { WorkCards, type Project } from "@/components/WorkCards";
 
 const projects: Project[] = [
@@ -78,9 +79,7 @@ export default function Home() {
         <h1 className="font-serif text-[24px] leading-[1.2] font-medium whitespace-nowrap">
           Devin Hayden is a designer shaping experiences meant to be outgrown.
         </h1>
-        <p className="text-[16px] leading-[1.4] text-black/70 whitespace-nowrap">
-          You can reach him on LinkedIn, X, via email, or most likely on Beli.
-        </p>
+        <ContactLine />
       </div>
 
       <WorkCards projects={projects} />
