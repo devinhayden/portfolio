@@ -11,10 +11,8 @@ export type Project = {
   image?: string;
 };
 
-const DEFAULT_EXPANDED_INDEX = 2;
-
 export function WorkCards({ projects }: { projects: Project[] }) {
-  const [activeIndex, setActiveIndex] = useState(DEFAULT_EXPANDED_INDEX);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
