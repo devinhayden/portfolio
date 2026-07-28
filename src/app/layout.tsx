@@ -1,16 +1,25 @@
 import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google";
-import SiteShell from "@/components/SiteShell";
+import { Hanken_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const hankenGrotesk = Hanken_Grotesk({
+  variable: "--font-hanken-grotesk",
   subsets: ["latin"],
+  weight: ["400", "500"],
+});
+
+const rowan = localFont({
+  src: "./fonts/Rowan-Regular.woff2",
+  variable: "--font-rowan",
+  weight: "400",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Devin Hayden",
-  description: "Devin Hayden's portfolio",
+  description:
+    "Devin Hayden is a designer shaping experiences meant to be outgrown.",
 };
 
 export default function RootLayout({
@@ -19,17 +28,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistMono.variable} h-full antialiased`}>
-      <head>
-        <link rel="preconnect" href="https://api.fontshare.com" />
-        <link
-          rel="stylesheet"
-          href="https://api.fontshare.com/v2/css?f[]=rowan@300,301,400,401,500,501,600,601,700,701&display=swap"
-        />
-      </head>
-      <body className="min-h-full flex flex-col">
-        <SiteShell>{children}</SiteShell>
-      </body>
+    <html
+      lang="en"
+      className={`${hankenGrotesk.variable} ${rowan.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

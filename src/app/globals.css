@@ -1,15 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3eee5;
-  --foreground: #1a1a1a;
-  --font-rowan: "Rowan", serif;
+  --background: #f7f7f7;
+  --foreground: #000000;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-hanken-grotesk);
   --font-serif: var(--font-rowan);
 }
 
@@ -18,84 +17,11 @@ body {
   color: var(--foreground);
 }
 
-/* Page-content transitions (native View Transitions API, enabled via
-   experimental.viewTransition in next.config.ts). Scoped to the "page"
-   view-transition-name set on the <ViewTransition> in SiteShell, which
-   only wraps the per-route {children} - the floating nav, gradient, and
-   canvas live outside it and are never part of these snapshots. The
-   browser cross-fades actual pixel snapshots of the old/new state, so
-   this can't desync from React's render timing the way a JS-driven
-   mount/unmount animation could. */
-@keyframes page-exit {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(16px);
-  }
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-@keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-::view-transition-old(page) {
-  animation: 400ms ease-in-out both page-exit;
-}
-
-::view-transition-new(page) {
-  animation: 400ms ease-in-out both page-enter;
-}
-
-/* Naming "page" only pulls the route content out of the browser's default
-   root snapshot - everything else (nav, gradient, canvas) is still part of
-   an implicit ::view-transition-group(root) that the UA cross-fades on its
-   own by default. Suppressed as a general safety net so unnamed chrome
-   doesn't cross-fade by default. */
-::view-transition-group(root),
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-}
-
-/* The nav still rode along in that default root crossfade even with the
-   above, because "being unnamed" and "being explicitly anchored" aren't
-   the same thing to the browser. Giving it its own view-transition-name
-   (set via style={{ viewTransitionName: "site-nav" }} in SiteShell) and
-   suppressing that group specifically is the same "anchor a persistent
-   header" pattern the framework's own view-transition guide recommends -
-   display:none on the old snapshot avoids a flash where both old and new
-   are briefly stacked, since the nav never actually changes between
-   routes. */
-::view-transition-group(site-nav) {
-  animation: none;
-}
-
-::view-transition-old(site-nav) {
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
-}
-
-::view-transition-new(site-nav) {
-  animation: none;
-}
-
-::view-transition-group(photo-info) {
-  animation: none;
-}
-
-::view-transition-old(photo-info) {
-  display: none;
-}
-
-::view-transition-new(photo-info) {
-  animation: none;
 }
