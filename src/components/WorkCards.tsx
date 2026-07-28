@@ -18,7 +18,7 @@ export type Project = {
 };
 
 const CARD_EXPANDED_WIDTH = 600;
-const MOCKUP_HEIGHT = 400;
+const MOCKUP_HEIGHT = 300;
 const CARD_TRANSITION = { duration: 0.75, ease: [0.65, 0, 0.35, 1] as const };
 
 function getMockupDisplayWidth(project: Project) {

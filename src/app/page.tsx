@@ -9,7 +9,7 @@ const projects: Project[] = [
     mockup: "/appleTripUI.png",
     mockupWidth: 529,
     mockupHeight: 705,
-    mockupOffset: 0,
+    mockupOffset: 56,
   },
   {
     title: "Trimble",
@@ -19,7 +19,7 @@ const projects: Project[] = [
     mockup: "/trimbleUI.png",
     mockupWidth: 946,
     mockupHeight: 688,
-    mockupOffset: 0,
+    mockupOffset: 56,
   },
   {
     title: "Voxel",
@@ -29,7 +29,7 @@ const projects: Project[] = [
     mockup: "/voxelUI.png",
     mockupWidth: 635,
     mockupHeight: 688,
-    mockupOffset: 0,
+    mockupOffset: 56,
   },
   {
     title: "Nova",
@@ -39,7 +39,7 @@ const projects: Project[] = [
     mockup: "/novaUI.png",
     mockupWidth: 910,
     mockupHeight: 777,
-    mockupOffset: 0,
+    mockupOffset: 56,
   },
   {
     title: "NRG Experiential",
@@ -49,7 +49,7 @@ const projects: Project[] = [
     mockup: "/nrgUI.png",
     mockupWidth: 938,
     mockupHeight: 656,
-    mockupOffset: 0,
+    mockupOffset: 56,
   },
 ];
 
