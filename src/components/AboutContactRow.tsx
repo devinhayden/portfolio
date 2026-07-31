@@ -15,23 +15,21 @@ function SocialLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-export function ContactLine() {
+export function AboutContactRow() {
   const { copied, copyEmail } = useCopyEmail();
 
   return (
-    <p className="text-[16px] leading-[1.4] text-black/70 whitespace-nowrap">
-      You can reach him on{" "}
-      <SocialLink href="https://www.linkedin.com/in/devin-hayden" label="LinkedIn" />,{" "}
-      <SocialLink href="https://x.com/devinxhayden" label="X" />, via{" "}
+    <div className="flex items-center gap-6 text-[16px] leading-[1.4] text-black/70">
+      <SocialLink href="https://www.linkedin.com/in/devin-hayden" label="LinkedIn" />
+      <SocialLink href="https://x.com/devinxhayden" label="X" />
       <button
         type="button"
         onClick={copyEmail}
         className="underline underline-offset-2 transition-colors hover:text-black"
       >
-        {copied ? "Copied" : "email"}
+        {copied ? "Copied" : "Email"}
       </button>
-      , or most likely on{" "}
-      <SocialLink href="https://beli.com/devinxhayden" label="Beli" />.
-    </p>
+      <SocialLink href="https://beli.com/devinxhayden" label="Beli" />
+    </div>
   );
 }

@@ -1,0 +1,59 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
+
+const NAV_ITEMS = [
+  { key: "about", label: "About", href: "/about" },
+  { key: "work", label: "Work", href: "/" },
+  { key: "extras", label: "Extras", href: null },
+] as const;
+
+function getActiveKey(pathname: string) {
+  if (pathname === "/about") return "about";
+  if (pathname === "/") return "work";
+  return null;
+}
+
+export function Nav() {
+  const pathname = usePathname();
+  const active = getActiveKey(pathname);
+
+  return (
+    <nav
+      style={{ viewTransitionName: "site-nav" }}
+      className="fixed top-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-lg border border-black/10 bg-[#f7f7f7] p-2"
+    >
+      {NAV_ITEMS.map((item) => {
+        const isActive = item.key === active;
+        const label = (
+          <span className="relative block rounded-lg px-2 py-1 text-[14px] leading-[1.4]">
+            {isActive && (
+              <motion.span
+                layoutId="nav-active-pill"
+                className="absolute inset-0 rounded-lg bg-[#ebebeb]"
+                transition={{ type: "spring", stiffness: 420, damping: 34 }}
+              />
+            )}
+            <span
+              className={`relative z-10 text-black/70 ${isActive ? "font-medium" : "font-normal"}`}
+            >
+              {item.label}
+            </span>
+          </span>
+        );
+
+        if (!item.href) {
+          return <span key={item.key}>{label}</span>;
+        }
+
+        return (
+          <Link key={item.key} href={item.href}>
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

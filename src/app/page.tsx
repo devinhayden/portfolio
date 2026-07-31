@@ -2,16 +2,16 @@ import { ContactLine } from "@/components/ContactLine";
 import { WorkCards, type Project } from "@/components/WorkCards";
 
 const projects: Project[] = [
-  {
-    title: "Apple Trips",
-    status: "Concept",
-    description: "iOS-native trip planning",
-    background: "/appleTripsCover.png",
-    mockup: "/appleTripUI.png",
-    mockupWidth: 529,
-    mockupHeight: 705,
-    mockupOffset: 56,
-  },
+  // {
+  //   title: "Apple Trips",
+  //   status: "Concept",
+  //   description: "iOS-native trip planning",
+  //   background: "/appleTripsCover.png",
+  //   mockup: "/appleTripUI.png",
+  //   mockupWidth: 529,
+  //   mockupHeight: 705,
+  //   mockupOffset: 56,
+  // },
   {
     title: "Trimble",
     status: "Shipped",
@@ -54,27 +54,9 @@ const projects: Project[] = [
   },
 ];
 
-function NavItem({ label, active }: { label: string; active?: boolean }) {
-  return (
-    <span
-      className={`rounded-lg px-2 py-1 text-[14px] leading-[1.4] text-black/70 ${
-        active ? "bg-[#ebebeb] font-medium" : "font-normal"
-      }`}
-    >
-      {label}
-    </span>
-  );
-}
-
 export default function Home() {
   return (
-    <div className="relative flex h-screen flex-col items-center justify-center gap-16 overflow-hidden bg-[#f7f7f7] px-6 font-sans text-black">
-      <nav className="absolute top-6 left-1/2 flex -translate-x-1/2 items-center gap-4 rounded-lg border border-black/10 p-2">
-        <NavItem label="About" />
-        <NavItem label="Work" active />
-        <NavItem label="Reel" />
-      </nav>
-
+    <div className="flex h-screen flex-col items-center justify-center gap-16 overflow-hidden bg-[#f7f7f7] px-6 pt-20 font-sans text-black">
       <div className="flex flex-col items-center gap-[22px] text-center">
         <h1 className="font-serif text-[24px] leading-[1.2] font-medium whitespace-nowrap">
           Devin Hayden is a designer shaping experiences meant to be outgrown.
@@ -82,7 +64,7 @@ export default function Home() {
         <ContactLine />
       </div>
 
-      <WorkCards projects={projects} />
+      <WorkCards projects={projects} defaultExpandedTitle="Voxel" />
     </div>
   );
 }

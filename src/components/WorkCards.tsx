@@ -26,8 +26,18 @@ function getMockupDisplayWidth(project: Project) {
   return (MOCKUP_HEIGHT * project.mockupWidth) / project.mockupHeight;
 }
 
-export function WorkCards({ projects }: { projects: Project[] }) {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+export function WorkCards({
+  projects,
+  defaultExpandedTitle,
+}: {
+  projects: Project[];
+  defaultExpandedTitle?: string;
+}) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(() => {
+    if (!defaultExpandedTitle) return null;
+    const index = projects.findIndex((p) => p.title === defaultExpandedTitle);
+    return index === -1 ? null : index;
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
