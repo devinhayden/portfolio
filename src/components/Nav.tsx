@@ -23,7 +23,7 @@ export function Nav() {
   return (
     <nav
       style={{ viewTransitionName: "site-nav" }}
-      className="fixed top-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-lg border border-black/10 bg-[#f7f7f7] p-2"
+      className="fixed top-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-lg border border-foreground/10 bg-background p-2"
     >
       {NAV_ITEMS.map((item) => {
         const isActive = item.key === active;
@@ -32,12 +32,12 @@ export function Nav() {
             {isActive && (
               <motion.span
                 layoutId="nav-active-pill"
-                className="absolute inset-0 rounded-lg bg-[#ebebeb]"
+                className="absolute inset-0 rounded-lg bg-[#E4DDD0]"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
             <span
-              className={`relative z-10 text-black/70 ${isActive ? "font-medium" : "font-normal"}`}
+              className={`relative z-10 text-foreground/70 ${isActive ? "font-medium" : "font-normal"}`}
             >
               {item.label}
             </span>

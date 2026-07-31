@@ -56,10 +56,10 @@ const projects: Project[] = [
 
 export default function Home() {
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-16 overflow-hidden bg-[#f7f7f7] px-6 pt-20 font-sans text-black">
+    <div className="flex h-screen flex-col items-center justify-center gap-16 overflow-hidden bg-background px-6 pt-20 font-sans text-foreground">
       <div className="flex flex-col items-center gap-[22px] text-center">
         <h1 className="font-serif text-[24px] leading-[1.2] font-medium whitespace-nowrap">
-          Devin Hayden is a designer shaping experiences meant to be outgrown.
+          Devin is a designer shaping experiences meant to be outgrown.
         </h1>
         <ContactLine />
       </div>

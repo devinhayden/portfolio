@@ -23,16 +23,16 @@ const education: TimelineEntry[] = [
 function TimelineRow({ org, role, date }: TimelineEntry) {
   return (
     <div className="flex items-baseline gap-4 text-[16px] leading-[1.4] whitespace-nowrap">
-      <span className="w-[260px] shrink-0 text-black/90">{org}</span>
-      <span className="grow text-black/70">{role}</span>
-      <span className="shrink-0 text-black/70">{date}</span>
+      <span className="w-[260px] shrink-0 text-foreground/90">{org}</span>
+      <span className="grow text-foreground/70">{role}</span>
+      <span className="shrink-0 text-foreground/70">{date}</span>
     </div>
   );
 }
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-[#f7f7f7] px-6 pt-28 pb-24 font-sans text-black">
+    <div className="min-h-screen bg-background px-6 pt-28 pb-24 font-sans text-foreground">
       <div className="mx-auto flex w-full max-w-[670px] flex-col">
         <div className="flex items-start gap-6">
           <Image
@@ -46,7 +46,7 @@ export default function About() {
             <p className="font-serif text-[18px] leading-[1.2] font-medium tracking-[0.36px]">
               Devin Hayden
             </p>
-            <p className="text-[16px] leading-[1.4] text-black/70">
+            <p className="text-[16px] leading-[1.4] text-foreground/70">
               Product Design + Photo + Community
             </p>
             <div className="mt-2">
@@ -55,7 +55,7 @@ export default function About() {
           </div>
         </div>
 
-        <div className="mt-9 flex flex-col gap-4 text-[16px] leading-[1.4] text-black/70">
+        <div className="mt-9 flex flex-col gap-4 text-[16px] leading-[1.4] text-foreground/70">
           <p>
             Great design, to me, is when someone takes what you made and finds
             their own way to Z, not just A to B. That&rsquo;s the moment a
