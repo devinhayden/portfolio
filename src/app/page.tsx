@@ -1,4 +1,6 @@
 import { ContactLine } from "@/components/ContactLine";
+import { GlyphMeadow } from "@/components/GlyphMeadow";
+import { InkFilterDefs } from "@/components/InkFilterDefs";
 import { WorkCards, type Project } from "@/components/WorkCards";
 
 const projects: Project[] = [
@@ -56,9 +58,15 @@ const projects: Project[] = [
 
 export default function Home() {
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-16 overflow-hidden bg-background px-6 pt-20 font-sans text-foreground">
+    <div className="relative isolate flex h-screen flex-col items-center justify-center gap-16 overflow-hidden bg-background px-6 pt-20 font-sans text-foreground">
+      <InkFilterDefs />
+      <GlyphMeadow />
+
       <div className="flex flex-col items-center gap-[22px] text-center">
-        <h1 className="font-serif text-[24px] leading-[1.2] font-medium whitespace-nowrap">
+        <h1
+          className="font-serif text-[32px] leading-[1.2] font-semibold whitespace-nowrap"
+          style={{ filter: "url(#ink-bleed)" }}
+        >
           Devin is a designer shaping experiences meant to be outgrown.
         </h1>
         <ContactLine />

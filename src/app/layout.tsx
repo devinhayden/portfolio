@@ -16,6 +16,7 @@ const rowan = localFont({
   src: [
     { path: "./fonts/Rowan-Regular.woff2", weight: "400", style: "normal" },
     { path: "./fonts/Rowan-Medium.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/Rowan-SemiBold.woff2", weight: "600", style: "normal" },
   ],
   variable: "--font-rowan",
   display: "swap",

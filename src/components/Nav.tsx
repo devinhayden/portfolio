@@ -23,16 +23,16 @@ export function Nav() {
   return (
     <nav
       style={{ viewTransitionName: "site-nav" }}
-      className="fixed top-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-lg border border-foreground/10 bg-background p-2"
+      className="fixed top-16 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded border border-foreground/10 bg-background p-2"
     >
       {NAV_ITEMS.map((item) => {
         const isActive = item.key === active;
         const label = (
-          <span className="relative block rounded-lg px-2 py-1 text-[14px] leading-[1.4]">
+          <span className="relative block rounded px-2 py-1 text-[14px] leading-[1.4]">
             {isActive && (
               <motion.span
                 layoutId="nav-active-pill"
-                className="absolute inset-0 rounded-lg bg-[#E4DDD0]"
+                className="absolute inset-0 rounded bg-[#E4DDD0]"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}

@@ -22,9 +22,11 @@ const education: TimelineEntry[] = [
 
 function TimelineRow({ org, role, date }: TimelineEntry) {
   return (
-    <div className="flex items-baseline gap-4 text-[16px] leading-[1.4] whitespace-nowrap">
-      <span className="w-[260px] shrink-0 text-foreground/90">{org}</span>
-      <span className="grow text-foreground/70">{role}</span>
+    <div className="flex items-baseline justify-between gap-4 text-[16px] leading-[1.4] whitespace-nowrap">
+      <div className="flex items-baseline gap-2">
+        <span className="text-foreground/90">{org}</span>
+        <span className="text-foreground/70">{role}</span>
+      </div>
       <span className="shrink-0 text-foreground/70">{date}</span>
     </div>
   );
@@ -32,7 +34,7 @@ function TimelineRow({ org, role, date }: TimelineEntry) {
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-background px-6 pt-28 pb-24 font-sans text-foreground">
+    <div className="min-h-screen bg-background px-6 pt-48 pb-24 font-sans text-foreground">
       <div className="mx-auto flex w-full max-w-[670px] flex-col">
         <div className="flex items-start gap-6">
           <Image

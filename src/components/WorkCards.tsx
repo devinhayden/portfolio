@@ -67,7 +67,7 @@ export function WorkCards({
               onMouseEnter={() => setActiveIndex(index)}
               animate={{ width: expanded ? CARD_EXPANDED_WIDTH : 200 }}
               transition={CARD_TRANSITION}
-              className="relative h-[456px] shrink-0 overflow-hidden rounded-lg bg-[#d9d9d9]"
+              className="relative h-[456px] shrink-0 overflow-hidden rounded bg-[#d9d9d9]"
             >
               {project.background && (
                 <Image
