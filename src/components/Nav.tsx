@@ -23,7 +23,7 @@ export function Nav() {
   return (
     <nav
       style={{ viewTransitionName: "site-nav" }}
-      className="fixed top-16 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded border border-foreground/10 bg-background p-2"
+      className="fixed top-20 right-16 z-50 flex items-center gap-4 rounded border border-foreground/10 bg-background p-2"
     >
       {NAV_ITEMS.map((item) => {
         const isActive = item.key === active;

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { motion } from "motion/react";
 
 export type Project = {
   title: string;
@@ -13,13 +12,13 @@ export type Project = {
   /** Intrinsic pixel size of the mockup file, used to render every mockup at the same height. */
   mockupWidth?: number;
   mockupHeight?: number;
-  /** Left position (px) of the mockup within the collapsed 200px card. */
+  /** Left position (px) of the mockup within the collapsed card. */
   mockupOffset?: number;
 };
 
-const CARD_EXPANDED_WIDTH = 600;
-const MOCKUP_HEIGHT = 300;
-const CARD_TRANSITION = { duration: 0.75, ease: [0.65, 0, 0.35, 1] as const };
+const COLLAPSED_WIDTH = 200;
+const MOCKUP_HEIGHT = 220;
+const TRANSITION = "0.75s cubic-bezier(0.65, 0, 0.35, 1)";
 
 function getMockupDisplayWidth(project: Project) {
   if (!project.mockupWidth || !project.mockupHeight) return MOCKUP_HEIGHT;
@@ -38,90 +37,75 @@ export function WorkCards({
     const index = projects.findIndex((p) => p.title === defaultExpandedTitle);
     return index === -1 ? null : index;
   });
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const onWheel = (e: WheelEvent) => {
-      if (e.deltaY === 0) return;
-      e.preventDefault();
-      el.scrollLeft += e.deltaY;
-    };
-
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, []);
 
   return (
-    <div ref={scrollRef} className="scrollbar-hide -mx-6 w-full overflow-x-auto overflow-y-hidden">
-      <div className="flex w-max gap-[12px] px-[63px]">
-        {projects.map((project, index) => {
-          const expanded = index === activeIndex;
-          const mockupWidth = getMockupDisplayWidth(project);
-          const mockupExpandedLeft = (CARD_EXPANDED_WIDTH - mockupWidth) / 2;
-          return (
-            <motion.div
-              key={project.title}
-              onMouseEnter={() => setActiveIndex(index)}
-              animate={{ width: expanded ? CARD_EXPANDED_WIDTH : 200 }}
-              transition={CARD_TRANSITION}
-              className="relative h-[456px] shrink-0 overflow-hidden rounded bg-[#d9d9d9]"
-            >
-              {project.background && (
-                <Image
-                  src={project.background}
-                  alt=""
-                  fill
-                  sizes="600px"
-                  className="object-cover"
-                />
-              )}
-              {project.mockup && (
-                <motion.div
-                  animate={{
-                    left: expanded
-                      ? mockupExpandedLeft
-                      : (project.mockupOffset ?? 0),
-                  }}
-                  transition={CARD_TRANSITION}
-                  className="absolute top-1/2 -translate-y-1/2"
-                  style={{ width: mockupWidth, height: MOCKUP_HEIGHT }}
-                >
-                  <Image
-                    src={project.mockup}
-                    alt={`${project.title} interface`}
-                    fill
-                    sizes={`${Math.round(mockupWidth)}px`}
-                    className="object-contain"
-                  />
-                </motion.div>
-              )}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 45%)",
-                }}
+    <div className="flex min-h-0 w-full flex-1 gap-[12px]">
+      {projects.map((project, index) => {
+        const expanded = index === activeIndex;
+        const mockupWidth = getMockupDisplayWidth(project);
+        const mockupCollapsedLeft = (project.mockupOffset ?? 0) + mockupWidth / 2;
+        return (
+          <div
+            key={project.title}
+            onMouseEnter={() => setActiveIndex(index)}
+            className="relative shrink-0 overflow-hidden rounded bg-[#d9d9d9]"
+            style={{
+              flexBasis: COLLAPSED_WIDTH,
+              flexGrow: expanded ? 1 : 0,
+              transition: `flex-grow ${TRANSITION}`,
+            }}
+          >
+            {project.background && (
+              <Image
+                src={project.background}
+                alt=""
+                fill
+                sizes="700px"
+                className="object-cover"
               />
-              <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-4">
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="text-[16px] leading-[1.4] font-medium text-white">
-                    {project.title}
-                  </span>
-                  <span className="rounded-sm bg-white/25 px-1 py-0.5 text-[10px] leading-[1.4] font-medium text-white">
-                    {project.status}
-                  </span>
-                </div>
-                <p className="text-[14px] leading-[1.4] text-white">
-                  {project.description}
-                </p>
+            )}
+            {project.mockup && (
+              <div
+                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  width: mockupWidth,
+                  height: MOCKUP_HEIGHT,
+                  left: expanded ? "50%" : mockupCollapsedLeft,
+                  transition: `left ${TRANSITION}`,
+                }}
+              >
+                <Image
+                  src={project.mockup}
+                  alt={`${project.title} interface`}
+                  fill
+                  sizes={`${Math.round(mockupWidth)}px`}
+                  className="object-contain"
+                />
               </div>
-            </motion.div>
-          );
-        })}
-      </div>
+            )}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 45%)",
+              }}
+            />
+            <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-4">
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <span className="text-[16px] leading-[1.4] font-medium text-white">
+                  {project.title}
+                </span>
+                <span className="rounded-sm bg-white/25 px-1 py-0.5 text-[10px] leading-[1.4] font-medium text-white">
+                  {project.status}
+                </span>
+              </div>
+              <p className="text-[14px] leading-[1.4] text-white">
+                {project.description}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
