@@ -5,33 +5,77 @@ import { motion, useReducedMotion } from "motion/react";
 
 const GLYPHS = ["✳", "❋", "✽", "*", ","];
 const COLORS = ["rgba(28,27,26,0.16)", "rgba(28,27,26,0.1)", "#e4ddd0"];
-const INITIAL_COUNT = 6;
-const MAX_COUNT = 40;
+const INITIAL_COUNT = 8;
+const MAX_COUNT = 56;
 const GROWTH_INTERVAL_MS = 6000;
+
+type Edge = "bottom" | "top" | "left" | "right";
+
+/** Orients each glyph so its base sits on the edge it grows from. */
+const EDGE_ROTATION: Record<Edge, number> = {
+  bottom: 0,
+  top: 180,
+  left: 90,
+  right: -90,
+};
+
+const EDGE_ORIGIN: Record<Edge, string> = {
+  bottom: "50% 100%",
+  top: "50% 0%",
+  left: "0% 50%",
+  right: "100% 50%",
+};
 
 type Sprout = {
   id: number;
   glyph: string;
   color: string;
-  /** Horizontal position as a % of the viewport width. */
-  left: number;
-  bottom: number;
+  edge: Edge;
+  /** Position along the edge as a % of its length. */
+  along: number;
+  /** Inset (px) from the edge the sprout grows out of. */
+  inset: number;
   size: number;
   rotate: number;
   swayDuration: number;
 };
 
+function pickEdge(): Edge {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const r = Math.random() * (2 * w + 2 * h);
+  if (r < w) return "bottom";
+  if (r < 2 * w) return "top";
+  if (r < 2 * w + h) return "left";
+  return "right";
+}
+
 function makeSprout(id: number): Sprout {
+  const edge = pickEdge();
   return {
     id,
     glyph: GLYPHS[Math.floor(Math.random() * GLYPHS.length)],
     color: COLORS[Math.floor(Math.random() * COLORS.length)],
-    left: 1 + Math.random() * 98,
-    bottom: 4 + Math.random() * 24,
+    edge,
+    along: 1 + Math.random() * 98,
+    inset: 4 + Math.random() * 24,
     size: 12 + Math.random() * 10,
-    rotate: -22 + Math.random() * 44,
+    rotate: EDGE_ROTATION[edge] - 22 + Math.random() * 44,
     swayDuration: 4 + Math.random() * 4,
   };
+}
+
+function edgePosition(sprout: Sprout): React.CSSProperties {
+  switch (sprout.edge) {
+    case "bottom":
+      return { left: `${sprout.along}%`, bottom: sprout.inset };
+    case "top":
+      return { left: `${sprout.along}%`, top: sprout.inset };
+    case "left":
+      return { top: `${sprout.along}%`, left: sprout.inset };
+    case "right":
+      return { top: `${sprout.along}%`, right: sprout.inset };
+  }
 }
 
 export function GlyphMeadow() {
@@ -62,7 +106,7 @@ export function GlyphMeadow() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-16 font-serif"
+      className="pointer-events-none absolute inset-0 -z-10 font-serif"
     >
       {sprouts.map((sprout) => (
         <motion.span
@@ -97,11 +141,10 @@ export function GlyphMeadow() {
           }}
           className="absolute leading-none"
           style={{
-            left: `${sprout.left}%`,
-            bottom: sprout.bottom,
+            ...edgePosition(sprout),
             fontSize: sprout.size,
             color: sprout.color,
-            transformOrigin: "50% 100%",
+            transformOrigin: EDGE_ORIGIN[sprout.edge],
           }}
         >
           {sprout.glyph}
