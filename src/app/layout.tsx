@@ -31,7 +31,13 @@ export default function RootLayout({
       lang="en"
       className={`${dmMono.variable} ${rowan.variable} h-full antialiased`}
     >
-      <body className="h-full overflow-hidden">{children}</body>
+      <body className="h-full overflow-hidden">
+        {children}
+        {/* The hero holds its content back until it has loaded; without JS, show it. */}
+        <noscript>
+          <style>{".reveal{opacity:1!important;transform:none!important}"}</style>
+        </noscript>
+      </body>
     </html>
   );
 }

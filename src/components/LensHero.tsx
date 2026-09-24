@@ -7,6 +7,7 @@ import {
   motion,
   useDragControls,
   useMotionValue,
+  useReducedMotion,
 } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
@@ -23,6 +24,9 @@ const LENS: LensParams = {
 
 const EMAIL = "dhydn04@gmail.com";
 const KEY_STEP = 24;
+/** Reveal anyway if something stalls, falling back to the CSS window. */
+const LOAD_TIMEOUT_MS = 6000;
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
 const linkClass =
   "transition-opacity hover:opacity-70 focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-white";
@@ -37,20 +41,40 @@ export function LensHero() {
   const y = useMotionValue(0);
   const dragControls = useDragControls();
 
-  const [photoLoaded, setPhotoLoaded] = useState(false);
-  const [lensReady, setLensReady] = useState(false);
+  const reduceMotion = useReducedMotion();
+
+  const [photoReady, setPhotoReady] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
+  const [lens, setLens] = useState<"pending" | "ready" | "failed">("pending");
+  const [timedOut, setTimedOut] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Hold the whole scene back until the photo is decoded, the fonts are in,
+  // and the lens has drawn its first frame, then reveal it in one sequence.
+  const ready = timedOut || (photoReady && fontsReady && lens !== "pending");
+
+  const handlePhotoLoad = () => {
+    const photo = photoRef.current;
+    if (!photo) return;
+    photo
+      .decode()
+      .catch(() => {})
+      .then(() => setPhotoReady(true));
+  };
+
   useEffect(() => {
-    if (photoRef.current?.complete) setPhotoLoaded(true);
+    if (photoRef.current?.complete) handlePhotoLoad();
+    document.fonts.ready.then(() => setFontsReady(true));
+    const timeout = setTimeout(() => setTimedOut(true), LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
     const photo = photoRef.current;
     const win = windowRef.current;
     const canvas = canvasRef.current;
-    if (!photoLoaded || !photo || !win || !canvas) return;
+    if (!photoReady || !photo || !win || !canvas) return;
 
     let renderer: ReturnType<typeof createLensRenderer> = null;
     try {
@@ -58,7 +82,10 @@ export function LensHero() {
     } catch (error) {
       console.error(error);
     }
-    if (!renderer) return;
+    if (!renderer) {
+      setLens("failed");
+      return;
+    }
     const lens = renderer;
 
     // The window's untransformed layout position; drag offsets add to it.
@@ -94,7 +121,7 @@ export function LensHero() {
 
     measure();
     draw();
-    setLensReady(true);
+    setLens("ready");
 
     const resizeObserver = new ResizeObserver(remeasure);
     resizeObserver.observe(win);
@@ -108,9 +135,9 @@ export function LensHero() {
       unsubscribeX();
       unsubscribeY();
       lens.dispose();
-      setLensReady(false);
+      setLens("pending");
     };
-  }, [photoLoaded, x, y]);
+  }, [photoReady, x, y]);
 
   useEffect(() => {
     if (!dragging) return;
@@ -152,20 +179,33 @@ export function LensHero() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const reveal = (delay: number) => ({
+    initial: { opacity: 0, y: reduceMotion ? 0 : 10 },
+    animate: ready ? { opacity: 1, y: 0 } : undefined,
+    transition: { duration: 0.8, delay, ease: EASE_OUT },
+  });
+
   return (
     <main className="fixed inset-0 overflow-hidden">
-      <Image
-        ref={photoRef}
-        src={PHOTO_SRC}
-        alt=""
-        fill
-        // Cover crops a 3:2 photo, so a portrait viewport needs it ~1.5× its height wide.
-        sizes="max(100vw, 151vh)"
-        loading="eager"
-        fetchPriority="high"
-        onLoad={() => setPhotoLoaded(true)}
-        className="object-cover grayscale"
-      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={ready ? { opacity: 1 } : undefined}
+        transition={{ duration: 1.1, ease: EASE_OUT }}
+        className="reveal absolute inset-0"
+      >
+        <Image
+          ref={photoRef}
+          src={PHOTO_SRC}
+          alt=""
+          fill
+          // Cover crops a 3:2 photo, so a portrait viewport needs it ~1.5× its height wide.
+          sizes="max(100vw, 151vh)"
+          loading="eager"
+          fetchPriority="high"
+          onLoad={handlePhotoLoad}
+          className="object-cover grayscale"
+        />
+      </motion.div>
 
       <div
         ref={boundsRef}
@@ -187,12 +227,15 @@ export function LensHero() {
           style={{ x, y }}
           className="pointer-events-auto relative flex w-[min(610px,calc(100vw-32px))] flex-col items-center px-6 pt-[88px] pb-12 text-white sm:h-[382px] sm:px-0 sm:pt-[133px] sm:pb-[74px]"
         >
-          <canvas
+          <motion.canvas
             ref={canvasRef}
             aria-hidden
+            initial={{ opacity: 0 }}
+            animate={ready ? { opacity: 1 } : undefined}
+            transition={{ duration: 0.8, delay: 0.3, ease: EASE_OUT }}
             className="pointer-events-none absolute inset-0 size-full"
           />
-          {!lensReady && (
+          {ready && lens !== "ready" && (
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 rounded-[12px] border-6 border-white bg-black/50 backdrop-blur-[2px]"
@@ -202,22 +245,41 @@ export function LensHero() {
           <button
             type="button"
             aria-label="Drag to move window. Arrow keys also move it."
-            onPointerDown={(event) => dragControls.start(event)}
-            onKeyDown={nudge}
-            className={`absolute top-[15px] left-1/2 grid size-8 -translate-x-1/2 touch-none place-items-center rounded-md focus-visible:outline-1 focus-visible:outline-white ${
+            aria-busy={!ready}
+            onPointerDown={(event) => ready && dragControls.start(event)}
+            onKeyDown={(event) => ready && nudge(event)}
+            className={`loader-appear absolute top-[15px] left-1/2 grid size-8 -translate-x-1/2 touch-none place-items-center rounded-md focus-visible:outline-1 focus-visible:outline-white ${
               dragging ? "cursor-grabbing" : "cursor-grab"
             }`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/grab.svg" alt="" width={28} height={16} draggable={false} />
+            {/* Doubles as the loading indicator: it pulses until the scene is ready. */}
+            <motion.img
+              src="/grab.svg"
+              alt=""
+              width={28}
+              height={16}
+              draggable={false}
+              animate={ready ? { opacity: 1 } : { opacity: [1, 0.3, 1] }}
+              transition={
+                ready
+                  ? { duration: 0.3 }
+                  : { duration: 1.4, ease: "easeInOut", repeat: Infinity }
+              }
+            />
           </button>
 
-          <h1 className="relative max-w-[452px] text-center font-serif text-[18px] leading-[normal] font-medium sm:text-[22px]">
+          <motion.h1
+            {...reveal(0.5)}
+            className="reveal relative max-w-[452px] text-center font-serif text-[18px] leading-[normal] font-medium sm:text-[22px]"
+          >
             Devin is a product designer shaping boundless digital experiences.
             He’s currently working on new stuff, so stay tuned!
-          </h1>
+          </motion.h1>
 
-          <ul className="relative mt-10 flex gap-6 font-mono text-[14px] leading-[normal] uppercase sm:mt-[58px] sm:gap-10">
+          <motion.ul
+            {...reveal(0.65)}
+            className="reveal relative mt-10 flex gap-6 font-mono text-[14px] leading-[normal] uppercase sm:mt-[58px] sm:gap-10"
+          >
             <li>
               <a
                 href="https://www.linkedin.com/in/devin-hayden"
@@ -239,11 +301,15 @@ export function LensHero() {
               </a>
             </li>
             <li>
-              <button type="button" onClick={copyEmail} className={`uppercase ${linkClass}`}>
+              <button
+                type="button"
+                onClick={copyEmail}
+                className={`uppercase ${linkClass}`}
+              >
                 <span aria-live="polite">{copied ? "Copied" : "Email"}</span>
               </button>
             </li>
-          </ul>
+          </motion.ul>
         </motion.section>
       </div>
     </main>

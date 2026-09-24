@@ -314,8 +314,16 @@ export function createLensRenderer(
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
+  // Frees resources but keeps the context alive: a remount (Strict Mode,
+  // Fast Refresh) gets the same context back from this canvas.
   function dispose() {
-    gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    if (!gl) return;
+    gl.deleteProgram(composite);
+    gl.deleteProgram(lens);
+    gl.deleteBuffer(quad);
+    gl.deleteTexture(photo);
+    gl.deleteTexture(inputTex);
+    gl.deleteFramebuffer(framebuffer);
   }
 
   return { render, dispose };
