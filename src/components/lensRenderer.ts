@@ -5,7 +5,20 @@
  * Pass 1 composites the effect's input — the color photo (blurred, dimmed)
  * inside a white rounded border — into a framebuffer, matching what the
  * shader sees in Figma. Pass 2 runs the lens math from Figma's WGSL source.
+ *
+ * Two photos are kept on the GPU at once so the window can change photo along
+ * with the background. The change itself is the shared channel-change tear, in
+ * page space, so a rip runs straight through the window instead of stopping at
+ * its border — the border stays crisp while the picture inside it breaks up.
  */
+
+import { GLITCH_GLSL } from "@/components/glitch";
+import {
+  VERTEX,
+  compileProgram,
+  createQuad,
+  uploadPhoto,
+} from "@/components/webgl";
 
 export type LensParams = {
   distortionStrength: number;
@@ -22,6 +35,10 @@ export type LensFrame = {
   height: number;
   viewportWidth: number;
   viewportHeight: number;
+  /** 0 shows the current photo, 1 the one the carousel picked. */
+  mix: number;
+  /** Ties this window's tear to the one running across the background. */
+  glitchSeed: number;
 };
 
 const BORDER_WIDTH = 6;
@@ -30,22 +47,17 @@ const BLUR_RADIUS = 2;
 const DIM = 0.5;
 const SAMPLE_SPREAD = 1.4;
 
-const VERTEX = `#version 300 es
-in vec2 aPos;
-out vec2 vUv;
-void main() {
-  // Top-left origin, matching Figma's pixel-space conventions.
-  vUv = vec2(aPos.x * 0.5 + 0.5, 0.5 - aPos.y * 0.5);
-  gl_Position = vec4(aPos, 0.0, 1.0);
-}`;
-
 const COMPOSITE = `#version 300 es
 precision highp float;
 in vec2 vUv;
 out vec4 outColor;
 
 uniform sampler2D uImage;
+uniform sampler2D uNextImage;
 uniform vec2 uImageSize;
+uniform vec2 uNextImageSize;
+uniform float uMix;
+uniform float uGlitchSeed;
 uniform vec2 uViewport;
 uniform vec2 uWinPos;
 uniform vec2 uWinSize;
@@ -55,6 +67,8 @@ const float BORDER = ${BORDER_WIDTH.toFixed(1)};
 const float RADIUS = ${OUTER_RADIUS.toFixed(1)};
 const float BLUR = ${BLUR_RADIUS.toFixed(1)};
 const float DIM = ${DIM.toFixed(3)};
+
+${GLITCH_GLSL}
 
 const vec2 DISK[12] = vec2[12](
   vec2(-0.326, -0.406), vec2(-0.840, -0.074), vec2(-0.696, 0.457),
@@ -69,10 +83,18 @@ float sdRoundBox(vec2 p, vec2 halfSize, float r) {
 }
 
 // Maps a viewport point to the photo's UV under object-fit: cover.
-vec2 coverUv(vec2 page) {
-  float scale = max(uViewport.x / uImageSize.x, uViewport.y / uImageSize.y);
-  vec2 drawn = uImageSize * scale;
+vec2 coverUv(vec2 page, vec2 imageSize) {
+  float scale = max(uViewport.x / imageSize.x, uViewport.y / imageSize.y);
+  vec2 drawn = imageSize * scale;
   return (page - (uViewport - drawn) * 0.5) / drawn;
+}
+
+vec3 blurredPhoto(sampler2D image, vec2 imageSize, vec2 page) {
+  vec3 sum = texture(image, coverUv(page, imageSize)).rgb;
+  for (int i = 0; i < 12; i++) {
+    sum += texture(image, coverUv(page + DISK[i] * BLUR, imageSize)).rgb;
+  }
+  return sum / 13.0;
 }
 
 void main() {
@@ -84,11 +106,21 @@ void main() {
   float innerMix = clamp(0.5 - inner * uDpr, 0.0, 1.0);
 
   vec2 page = uWinPos + local;
-  vec3 photo = texture(uImage, coverUv(page)).rgb;
-  for (int i = 0; i < 12; i++) {
-    photo += texture(uImage, coverUv(page + DISK[i] * BLUR)).rgb;
+  vec3 photo;
+  if (uMix > 0.0) {
+    // Page space, so the bands line up with the ones tearing the background
+    // and a rip carries straight through the window.
+    vec2 torn = glitchDisplace(page, uViewport, uMix, uGlitchSeed);
+    float cut = glitchCut(glitchBand(page, uViewport), uMix, uGlitchSeed);
+    photo = mix(
+      blurredPhoto(uImage, uImageSize, torn),
+      blurredPhoto(uNextImage, uNextImageSize, torn),
+      cut
+    );
+  } else {
+    photo = blurredPhoto(uImage, uImageSize, page);
   }
-  photo = photo / 13.0 * DIM;
+  photo *= DIM;
 
   vec3 color = mix(vec3(1.0), photo, innerMix);
   outColor = vec4(color * outerAlpha, outerAlpha);
@@ -198,28 +230,6 @@ void main() {
 }`;
 }
 
-function compile(gl: WebGL2RenderingContext, vs: string, fs: string) {
-  const program = gl.createProgram()!;
-  for (const [type, source] of [
-    [gl.VERTEX_SHADER, vs],
-    [gl.FRAGMENT_SHADER, fs],
-  ] as const) {
-    const shader = gl.createShader(type)!;
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(shader) ?? "Shader compile failed");
-    }
-    gl.attachShader(program, shader);
-  }
-  gl.bindAttribLocation(program, 0, "aPos");
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(gl.getProgramInfoLog(program) ?? "Program link failed");
-  }
-  return program;
-}
-
 export function createLensRenderer(
   canvas: HTMLCanvasElement,
   image: HTMLImageElement,
@@ -232,27 +242,23 @@ export function createLensRenderer(
   });
   if (!gl) return null;
 
-  const composite = compile(gl, VERTEX, COMPOSITE);
-  const lens = compile(gl, VERTEX, lensShader(params));
+  const composite = compileProgram(gl, VERTEX, COMPOSITE);
+  const lens = compileProgram(gl, VERTEX, lensShader(params));
+  const quad = createQuad(gl);
 
-  const quad = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-    gl.STATIC_DRAW,
-  );
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-
-  const photo = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, photo);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-  gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  // `current` is what the window shows; `next` is what the carousel picked.
+  // Both start on the same photo so the second slot is always complete.
+  const slot = (source: HTMLImageElement) => {
+    const texture = gl.createTexture()!;
+    uploadPhoto(gl, texture, source);
+    return {
+      texture,
+      width: source.naturalWidth,
+      height: source.naturalHeight,
+    };
+  };
+  let current = slot(image);
+  let next = slot(image);
 
   const inputTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, inputTex);
@@ -283,18 +289,39 @@ export function createLensRenderer(
       size = { w, h };
       canvas.width = w;
       canvas.height = h;
+      gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, inputTex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        w,
+        h,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        null,
+      );
     }
     gl.viewport(0, 0, w, h);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.useProgram(composite);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, photo);
+    gl.bindTexture(gl.TEXTURE_2D, current.texture);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, next.texture);
     gl.uniform1i(u(composite, "uImage"), 0);
-    gl.uniform2f(u(composite, "uImageSize"), image.naturalWidth, image.naturalHeight);
-    gl.uniform2f(u(composite, "uViewport"), frame.viewportWidth, frame.viewportHeight);
+    gl.uniform1i(u(composite, "uNextImage"), 1);
+    gl.uniform2f(u(composite, "uImageSize"), current.width, current.height);
+    gl.uniform2f(u(composite, "uNextImageSize"), next.width, next.height);
+    gl.uniform1f(u(composite, "uMix"), frame.mix);
+    gl.uniform1f(u(composite, "uGlitchSeed"), frame.glitchSeed);
+    gl.uniform2f(
+      u(composite, "uViewport"),
+      frame.viewportWidth,
+      frame.viewportHeight,
+    );
     gl.uniform2f(u(composite, "uWinPos"), frame.x, frame.y);
     gl.uniform2f(u(composite, "uWinSize"), frame.width, frame.height);
     gl.uniform1f(u(composite, "uDpr"), dpr);
@@ -302,6 +329,7 @@ export function createLensRenderer(
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.useProgram(lens);
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, inputTex);
     gl.uniform1i(u(lens, "uInput"), 0);
     gl.uniform2f(u(lens, "uDims"), w, h);
@@ -314,6 +342,19 @@ export function createLensRenderer(
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
+  /** Uploads the photo that `mix` fades towards. */
+  function setNextPhoto(source: HTMLImageElement) {
+    if (!gl) return;
+    uploadPhoto(gl, next.texture, source);
+    next.width = source.naturalWidth;
+    next.height = source.naturalHeight;
+  }
+
+  /** Makes the faded-to photo the current one, so `mix` can return to 0. */
+  function promotePhoto() {
+    [current, next] = [next, current];
+  }
+
   // Frees resources but keeps the context alive: a remount (Strict Mode,
   // Fast Refresh) gets the same context back from this canvas.
   function dispose() {
@@ -321,10 +362,11 @@ export function createLensRenderer(
     gl.deleteProgram(composite);
     gl.deleteProgram(lens);
     gl.deleteBuffer(quad);
-    gl.deleteTexture(photo);
+    gl.deleteTexture(current.texture);
+    gl.deleteTexture(next.texture);
     gl.deleteTexture(inputTex);
     gl.deleteFramebuffer(framebuffer);
   }
 
-  return { render, dispose };
+  return { render, setNextPhoto, promotePhoto, dispose };
 }
