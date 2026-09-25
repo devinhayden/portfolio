@@ -28,10 +28,18 @@ import {
   useSceneLayout,
 } from "@/components/sceneLayout";
 
-/** Values from the Figma "Lens distortion" effect on the hero window. */
+/**
+ * The window behaves like one element of a much larger lens whose axis is the
+ * middle of the screen: near-flat where it rests, bowing and splitting colour
+ * as it is dragged out toward the field edges. Figma's own values (0.12 / 0.06)
+ * sit roughly a third of the way along that range.
+ */
 const LENS: LensParams = {
-  distortionStrength: 0.12,
-  aberrationStrength: 0.06,
+  minDistortion: 0.03,
+  maxDistortion: 0.2,
+  minAberration: 0.015,
+  maxAberration: 0.079,
+  axisPull: 0.15,
   quality: 1,
 };
 

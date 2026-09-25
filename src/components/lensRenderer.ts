@@ -21,8 +21,23 @@ import {
 } from "@/components/webgl";
 
 export type LensParams = {
-  distortionStrength: number;
-  aberrationStrength: number;
+  /** Distortion on the optical axis — the middle of the screen. */
+  minDistortion: number;
+  /** Distortion at full field height, the furthest the window can be dragged. */
+  maxDistortion: number;
+  /** Lateral chromatic aberration is zero on-axis in a real lens, so this is low. */
+  minAberration: number;
+  /**
+   * Aberration at full field height. Kept under 0.08: past that Figma's effect
+   * doubles its kernel, and the window redraws on every frame of a drag.
+   */
+  maxAberration: number;
+  /**
+   * How far the distortion centre is pulled toward the middle of the screen at
+   * full field, as a share of the window's half-size. This is what makes the
+   * warp asymmetric off-axis — the edge facing away from the centre bows most.
+   */
+  axisPull: number;
   /** Figma quality select: 0 = high, 1 = medium, 2 = low. */
   quality: number;
 };
@@ -40,6 +55,9 @@ export type LensFrame = {
   /** Ties this window's tear to the one running across the background. */
   glitchSeed: number;
 };
+
+/** Smallest travel, as a share of the viewport, that counts as full field. */
+const MIN_REACH = 0.15;
 
 const BORDER_WIDTH = 6;
 const OUTER_RADIUS = 12;
@@ -147,7 +165,9 @@ function kernelData(quality: number, aberrationStrength: number) {
 }
 
 function lensShader(params: LensParams) {
-  const k = kernelData(params.quality, params.aberrationStrength);
+  // Sized for the strongest aberration the window can reach, so the kernel
+  // stays valid across the whole field.
+  const k = kernelData(params.quality, params.maxAberration);
   return `#version 300 es
 precision highp float;
 in vec2 vUv;
@@ -332,11 +352,48 @@ export function createLensRenderer(
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, inputTex);
     gl.uniform1i(u(lens, "uInput"), 0);
+    // Field height: 0 with the window centred on the screen, 1 once it has
+    // been dragged as far as it goes in any direction. Normalising per axis
+    // means an edge counts as full field, not just a corner.
+    // Floored, because on a phone the window nearly fills the screen: without
+    // this its tiny reach would count a 16px nudge as full field height, when
+    // in truth it has barely left the axis.
+    const reachX = Math.max(
+      (frame.viewportWidth - frame.width) / 2,
+      frame.viewportWidth * MIN_REACH,
+    );
+    const reachY = Math.max(
+      (frame.viewportHeight - frame.height) / 2,
+      frame.viewportHeight * MIN_REACH,
+    );
+    const offX = (frame.x + frame.width / 2 - frame.viewportWidth / 2) / reachX;
+    const offY =
+      (frame.y + frame.height / 2 - frame.viewportHeight / 2) / reachY;
+    const field = Math.min(1, Math.hypot(offX, offY));
+
+    // Distortion climbs with the square of field height, the way it does in a
+    // real lens: flat and square through the middle, bowing near the edges.
+    const falloff = field * field;
+    const lerp = (min: number, max: number) => min + (max - min) * falloff;
+
+    // Off-axis, the centre of the distortion sits toward the screen's middle.
+    const toward = field > 0.0001 ? params.axisPull * field : 0;
+    const centerX =
+      w * 0.5 - (offX / Math.max(field, 0.0001)) * toward * w * 0.5;
+    const centerY =
+      h * 0.5 - (offY / Math.max(field, 0.0001)) * toward * h * 0.5;
+
     gl.uniform2f(u(lens, "uDims"), w, h);
-    gl.uniform2f(u(lens, "uCenter"), w * 0.5, h * 0.5);
+    gl.uniform2f(u(lens, "uCenter"), centerX, centerY);
     gl.uniform1f(u(lens, "uRadius"), Math.hypot(w, h) * 0.5);
-    gl.uniform1f(u(lens, "uDistortion"), params.distortionStrength);
-    gl.uniform1f(u(lens, "uAberration"), params.aberrationStrength);
+    gl.uniform1f(
+      u(lens, "uDistortion"),
+      lerp(params.minDistortion, params.maxDistortion),
+    );
+    gl.uniform1f(
+      u(lens, "uAberration"),
+      lerp(params.minAberration, params.maxAberration),
+    );
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
