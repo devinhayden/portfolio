@@ -7,7 +7,14 @@ import { DesignCarousel } from "@/components/design/DesignCarousel";
 import { DesignDeepDive } from "@/components/design/DesignDeepDive";
 import { DESIGN_PROJECTS } from "@/components/design/designProjects";
 import { PhotoGrid } from "@/components/photos/PhotoGrid";
-import { CARDS, DESIGN, HOME, PHOTOS, WRITING, type Card } from "@/components/projects";
+import {
+  CARDS,
+  DESIGN,
+  HOME,
+  PHOTOS,
+  WRITING,
+  type Card,
+} from "@/components/projects";
 import { WritingIndex } from "@/components/writing/WritingIndex";
 
 /**
@@ -54,6 +61,18 @@ export function MobileSite({ initialSlug }: { initialSlug?: string }) {
 
   // Back and forward move between tabs. A piece of writing's sheet handles
   // its own entry; underneath it, the tab is Writing.
+  // The landing doesn't scroll, not even the rubber-band pull.
+  useEffect(() => {
+    if (tab !== HOME) return;
+    const root = document.documentElement;
+    const previous = [root.style.overflow, root.style.overscrollBehavior];
+    root.style.overflow = "hidden";
+    root.style.overscrollBehavior = "none";
+    return () => {
+      [root.style.overflow, root.style.overscrollBehavior] = previous;
+    };
+  }, [tab]);
+
   useEffect(() => {
     const onPop = () => {
       const card = cardForPath(window.location.pathname);
@@ -66,16 +85,23 @@ export function MobileSite({ initialSlug }: { initialSlug?: string }) {
 
   return (
     <>
-      <main className="page-ground text-ink relative min-h-svh">
-        {/* The landing ends above the pill, so nothing at its foot (the
-            portrait peeking up, the bubble) sits under the tabs. */}
+      <main
+        className={`page-ground text-ink relative ${tab === HOME ? "" : "min-h-svh"}`}
+      >
+        {/* The landing is one screen, pinned, so it never scrolls. It ends
+            at the pill's midline, so the portrait peeking up from its bottom
+            edge tucks in behind the tabs; it peeks higher to make up for
+            the part the pill covers. */}
         {tab === HOME && (
-          <div className="h-[calc(100svh-84px)]">
-            <LandingHero
-              about={aboutOpen}
-              onLearnMore={() => setAboutOpen(true)}
-              attention={!aboutOpen}
-            />
+          <div className="page-ground fixed inset-0">
+            <div className="absolute inset-x-0 top-0 bottom-[calc(max(16px,env(safe-area-inset-bottom))+22px)]">
+              <LandingHero
+                about={aboutOpen}
+                onLearnMore={() => setAboutOpen(true)}
+                attention={!aboutOpen}
+              peekLift={26}
+              />
+            </div>
           </div>
         )}
 

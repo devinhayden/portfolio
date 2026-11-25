@@ -21,6 +21,8 @@ import {
 } from "react";
 import { useDialKit } from "dialkit";
 
+import { PHONE, useMedia } from "@/components/useMedia";
+
 /**
  * The About card: the page the site opens on.
  *
@@ -136,6 +138,22 @@ const T = {
 const FADE_OUT = 0.3;
 const FADE_IN = 0.5;
 
+/**
+ * On a phone, seven cards across the screen would each be a thumbnail. The
+ * row there is a strip of full-size cards running off both edges, the
+ * portrait in the middle; once the cards land, it starts drifting sideways,
+ * an endless carousel.
+ */
+/** A strip card's size, and the space after it, in px. */
+const STRIP_CARD = 104;
+const STRIP_GAP = 12;
+/** One pass of the strip: seven cards and their gaps. */
+const STRIP_PERIOD = CARDS.length * (STRIP_CARD + STRIP_GAP);
+/** Seconds for one pass: an unhurried drift. */
+const STRIP_SECONDS = 32;
+/** Copies of the row after the first, so the drift never runs out. */
+const STRIP_COPIES = 2;
+
 /** The bubble's call for attention: a hop, every few seconds. */
 const NUDGE_EVERY = 4;
 const NUDGE_SIZE = 6;
@@ -197,6 +215,12 @@ type Props = {
   attention?: boolean;
   /** The portrait has loaded: ready to reveal. */
   onReady?: () => void;
+  /**
+   * Raises the peeking portrait and its bubble by this many px. On a phone
+   * the tab pill covers the bottom edge, and the portrait tucks in behind
+   * it, so it peeks further to stay in view.
+   */
+  peekLift?: number;
 };
 
 export function LandingHero({
@@ -204,10 +228,17 @@ export function LandingHero({
   onLearnMore,
   attention = false,
   onReady,
+  peekLift = 0,
 }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
   const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
   const reduceMotion = useReducedMotion();
+  /** Phones: the row is the drifting strip (see STRIP_CARD). */
+  const strip = useMedia(PHONE);
+  const stripRef = useRef(strip);
+  useEffect(() => {
+    stripRef.current = strip;
+  });
 
   /** Settled states take pointer input; the ones in between take none. */
   const [phase, setPhase] = useState<"intro" | "toAbout" | "about" | "toIntro">(
@@ -362,7 +393,7 @@ export function LandingHero({
 
   const peekPose = (g: Geometry): Pose => ({
     x: 0,
-    y: g.height / 2 - PEEK_FROM_BOTTOM * g.base,
+    y: g.height / 2 - PEEK_FROM_BOTTOM * g.base - peekLift,
     rotate: PEEK_ROTATE,
     flip: 1,
     scale: g.base,
@@ -392,7 +423,8 @@ export function LandingHero({
     cards.forEach((card, i) => {
       if (state === "about") {
         setPose(card, slotPose(g, i));
-        card.opacity.set(1);
+        // On a phone the strip's own cards stand in for these once settled.
+        card.opacity.set(stripRef.current ? 0 : 1);
       } else if (i === PORTRAIT_CARD) {
         setPose(card, peekPose(g));
         card.opacity.set(1);
@@ -617,6 +649,13 @@ export function LandingHero({
   }, [attention, introLive, reduceMotion, nudgeStyle, nudgeEvery, bubbleY, bubbleRotate]);
   const aboutLive = phase === "about";
 
+  // The handoff to the strip: the moving cards have landed exactly where
+  // its first copy sits, so they hide as it appears and nothing shifts.
+  useLayoutEffect(() => {
+    if (!strip) return;
+    if (phase === "about") cards.forEach((card) => card.opacity.set(0));
+  }, [strip, phase, cards]);
+
   return (
     <section
       ref={sectionRef}
@@ -672,8 +711,9 @@ export function LandingHero({
           rotate: bubbleRotate,
           originX: 0,
           originY: 1,
+          bottom: 80 + peekLift,
         }}
-        className="text-ink absolute bottom-[80px] left-[calc(50%+58px)] z-20 cursor-pointer rounded-t-[8px] rounded-br-[8px] border border-[#ececec] bg-[rgba(213,213,213,0.2)] px-4 py-2 font-mono text-[12px] leading-[1.5] tracking-[-0.03em] whitespace-nowrap uppercase transition-colors hover:bg-[rgba(213,213,213,0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink max-sm:left-auto max-sm:right-4"
+        className="text-ink absolute left-[calc(50%+58px)] z-20 cursor-pointer rounded-t-[8px] rounded-br-[8px] border border-[#ececec] bg-[rgba(213,213,213,0.2)] px-4 py-2 font-mono text-[12px] leading-[1.5] tracking-[-0.03em] whitespace-nowrap uppercase transition-colors hover:bg-[rgba(213,213,213,0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink max-sm:left-auto max-sm:right-4"
       >
         <span className="pointer-coarse:hidden">Click to learn more!</span>
         <span className="hidden pointer-coarse:inline">Tap to learn more!</span>
@@ -686,17 +726,75 @@ export function LandingHero({
         aria-hidden={!aboutLive && phase !== "toAbout"}
         className="absolute inset-0 flex flex-col items-center justify-center px-4 pt-[clamp(48px,9svh,90px)] pb-6 text-center"
       >
-        <div className="grid w-full max-w-[875px] grid-cols-7 gap-x-[clamp(6px,2.43vw,35px)]">
-          {CARDS.map((_, slot) => (
+        {strip ? (
+          // One copy's width, centred, so the portrait's slot is mid-screen;
+          // the track runs on past it to the right, and drifts left.
+          <div
+            style={{ width: STRIP_PERIOD - STRIP_GAP }}
+            className="shrink-0"
+          >
             <div
-              key={slot}
-              ref={(el) => {
-                slotRefs.current[slot] = el;
-              }}
-              className="aspect-square"
-            />
-          ))}
-        </div>
+              style={
+                {
+                  "--strip-period": `${STRIP_PERIOD}px`,
+                  animationDuration: `${STRIP_SECONDS}s`,
+                } as React.CSSProperties
+              }
+              className={`flex w-max ${
+                aboutLive && !reduceMotion ? "about-strip" : ""
+              }`}
+            >
+              {Array.from({ length: STRIP_COPIES + 1 }, (_, copy) =>
+                [...CARDS]
+                  .map((card, i) => ({ card, i }))
+                  .sort((a, b) => a.card.slot - b.card.slot)
+                  .map(({ card, i }) => (
+                    <div
+                      key={`${copy}-${card.slot}`}
+                      ref={
+                        copy === 0
+                          ? (el) => {
+                              slotRefs.current[card.slot] = el;
+                            }
+                          : undefined
+                      }
+                      style={{
+                        width: STRIP_CARD,
+                        height: STRIP_CARD,
+                        marginRight: STRIP_GAP,
+                      }}
+                      className={`shrink-0 ${
+                        aboutLive
+                          ? "opacity-100"
+                          : "opacity-0 transition-opacity duration-300"
+                      }`}
+                    >
+                      <div
+                        style={{
+                          transform: `scale(${STRIP_CARD / CARD})`,
+                          transformOrigin: "top left",
+                        }}
+                      >
+                        <CardFace index={i} />
+                      </div>
+                    </div>
+                  )),
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="grid w-full max-w-[875px] grid-cols-7 gap-x-[clamp(6px,2.43vw,35px)]">
+            {CARDS.map((_, slot) => (
+              <div
+                key={slot}
+                ref={(el) => {
+                  slotRefs.current[slot] = el;
+                }}
+                className="aspect-square"
+              />
+            ))}
+          </div>
+        )}
 
         <motion.h2
           style={{ opacity: headingOpacity, y: headingY }}
@@ -754,38 +852,52 @@ export function LandingHero({
               // under the one inside it. Off, the outer cards cover the inner.
               zIndex: CARDS[i].fan === null ? 4 : dial.fan.innerOnTop ? 3 - CARDS[i].fan : undefined,
             }}
-            className="absolute top-1/2 left-1/2 -mt-[47.5px] -ml-[47.5px] size-[95px] rounded-[8px] border-8 border-[#f7f7f7] bg-[#f7f7f7]"
+            className="absolute top-1/2 left-1/2 -mt-[47.5px] -ml-[47.5px]"
           >
-            <div className="absolute inset-0 overflow-hidden rounded-[8px]">
-              {CARDS[i].photo ? (
-                <Image
-                  src={CARDS[i].photo}
-                  alt=""
-                  fill
-                  sizes="240px"
-                  loading="eager"
-                  className="object-cover"
-                />
-              ) : (
-                // The crop the design uses: the head and shoulders of a
-                // portrait-format photo.
-                <div className="absolute top-[-35.46%] left-[-27.75%] h-[232.89%] w-[155.28%]">
-                  <Image
-                    src={PORTRAIT}
-                    alt=""
-                    fill
-                    sizes="240px"
-                    loading="eager"
-                    onLoad={onReady}
-                    className="object-cover"
-                  />
-                </div>
-              )}
-            </div>
+            <CardFace index={i} onLoad={i === PORTRAIT_CARD ? onReady : undefined} />
           </motion.div>
         ))}
       </div>
     </section>
+  );
+}
+
+/**
+ * One card as it looks at rest: a 95px print with a pale frame, showing its
+ * snapshot, or the portrait cropped to head and shoulders. The tossed cards
+ * and the phone's strip share it, so the handoff between them is exact.
+ */
+function CardFace({ index, onLoad }: { index: number; onLoad?: () => void }) {
+  const photo = CARDS[index].photo;
+  return (
+    <div className="relative size-[95px] rounded-[8px] border-8 border-[#f7f7f7] bg-[#f7f7f7]">
+      <div className="absolute inset-0 overflow-hidden rounded-[8px]">
+        {photo ? (
+          <Image
+            src={photo}
+            alt=""
+            fill
+            sizes="240px"
+            loading="eager"
+            className="object-cover"
+          />
+        ) : (
+          // The crop the design uses: the head and shoulders of a
+          // portrait-format photo.
+          <div className="absolute top-[-35.46%] left-[-27.75%] h-[232.89%] w-[155.28%]">
+            <Image
+              src={PORTRAIT}
+              alt=""
+              fill
+              sizes="240px"
+              loading="eager"
+              onLoad={onLoad}
+              className="object-cover"
+            />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

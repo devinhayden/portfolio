@@ -278,3 +278,16 @@ html:active-view-transition-type(photos-stack)::view-transition-new(.photo) {
     animation: none;
   }
 }
+
+/*
+ * The about's strip on a phone (LandingHero.tsx): the row of cards drifts
+ * left one copy's width, then starts over on the next, identical copy.
+ */
+.about-strip {
+  animation: about-strip linear infinite;
+}
+@keyframes about-strip {
+  to {
+    transform: translateX(calc(-1 * var(--strip-period)));
+  }
+}
