@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { useMedia } from "@/components/useMedia";
 
 import { DESIGN_PROJECTS } from "./designProjects";
 
@@ -16,6 +18,10 @@ import { DESIGN_PROJECTS } from "./designProjects";
  * so switching never resizes it: each screen is fitted inside it, and the
  * screens, headlines and bylines simply crossfade in place.
  *
+ * On desktop, hovering the card zooms the screen in a little around the
+ * cursor, and the zoom follows the cursor across it, for a closer look at
+ * the UI.
+ *
  * Controlled: `index` is the project on show. Arrow keys only switch when
  * `keyboard` is on.
  */
@@ -26,6 +32,10 @@ const PADDING = 24;
  * leave of the screen, between 200 and 500px…
  */
 const FIT_HEIGHT = "clamp(200px, 100svh - 420px, 500px)";
+/** How far hovering zooms the screen: a closer look, not a magnifier. */
+const ZOOM = 1.5;
+/** Desktop: a mouse that can hover. Touch has the swipe instead. */
+const HOVER = "(hover: hover) and (pointer: fine)";
 /** A swipe has to travel this far, in px, to count. */
 const SWIPE = 40;
 
@@ -71,6 +81,22 @@ export function DesignCarousel({
   }, [keyboard, count]);
 
   const swipeFrom = useRef<number | null>(null);
+
+  const canZoom = useMedia(HOVER);
+  const [zoomed, setZoomed] = useState(false);
+  const frameRef = useRef<HTMLDivElement>(null);
+  /** Aim the zoom at the cursor: its place over the screen, as a %. */
+  const aim = (event: React.PointerEvent) => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const rect = frame.getBoundingClientRect();
+    const at = (offset: number, size: number) =>
+      `${Math.min(100, Math.max(0, ((offset - PADDING) / (size - PADDING * 2)) * 100))}%`;
+    frame.style.setProperty("--zoom-x", at(event.clientX - rect.left, rect.width));
+    frame.style.setProperty("--zoom-y", at(event.clientY - rect.top, rect.height));
+  };
+  const hovering = (event: React.PointerEvent) =>
+    canZoom && event.pointerType === "mouse";
   const aspect = ASPECT;
   // …and no wider than the row has room for: the whole width less the
   // gutters on a phone, less the arrows beside it too from `sm` up.
@@ -114,9 +140,21 @@ export function DesignCarousel({
           onPointerCancel={() => {
             swipeFrom.current = null;
           }}
-          className="relative min-w-0 touch-pan-y overflow-hidden rounded-[16px] border border-[#e9e9e9] bg-[#fafafa] select-none"
+          onPointerEnter={(event) => {
+            if (!hovering(event)) return;
+            aim(event);
+            setZoomed(true);
+          }}
+          onPointerMove={(event) => {
+            if (hovering(event)) aim(event);
+          }}
+          onPointerLeave={() => setZoomed(false)}
+          className={`relative min-w-0 touch-pan-y overflow-hidden rounded-[16px] border border-[#e9e9e9] bg-[#fafafa] select-none ${
+            canZoom ? "cursor-zoom-in" : ""
+          }`}
         >
           <div
+            ref={frameRef}
             style={{
               height,
               width: `calc((${height} - ${PADDING * 2}px) * ${aspect} + ${PADDING * 2}px)`,
@@ -127,7 +165,20 @@ export function DesignCarousel({
               <div
                 key={item.slug}
                 aria-hidden={i !== index}
-                className={`absolute inset-[24px] transition-opacity duration-[420ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${
+                style={{
+                  transform: zoomed && i === index ? `scale(${ZOOM})` : "none",
+                  transformOrigin: "var(--zoom-x, 50%) var(--zoom-y, 50%)",
+                  // Zooming in starts slow and builds, after a short beat,
+                  // so brushing past the card barely stirs it. Zooming out
+                  // is quicker and settles. The aim follows the cursor
+                  // closely, smoothed just enough not to jitter.
+                  transition: `opacity 420ms cubic-bezier(0.4,0,0.2,1), ${
+                    zoomed
+                      ? "transform 900ms cubic-bezier(0.65,0,0.35,1) 80ms"
+                      : "transform 450ms cubic-bezier(0.22,1,0.36,1)"
+                  }, transform-origin 120ms ease-out`,
+                }}
+                className={`absolute inset-[24px] motion-reduce:transition-none! ${
                   i === index ? "opacity-100" : "opacity-0"
                 }`}
               >
@@ -135,7 +186,8 @@ export function DesignCarousel({
                   src={item.hero.src}
                   alt={item.hero.alt}
                   fill
-                  sizes="(max-width: 720px) 100vw, 680px"
+                  // Room for the hover zoom to stay sharp.
+                  sizes="(max-width: 720px) 100vw, 1040px"
                   priority={i === 0}
                   draggable={false}
                   className="object-contain"
