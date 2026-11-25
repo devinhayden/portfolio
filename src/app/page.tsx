@@ -1,5 +1,5 @@
-import { LensHero } from "@/components/LensHero";
+import { ProjectIndex } from "@/components/ProjectIndex";
 
 export default function Home() {
-  return <LensHero />;
+  return <ProjectIndex />;
 }

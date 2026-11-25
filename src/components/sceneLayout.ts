@@ -11,6 +11,38 @@ import { type RefObject, useEffect, useState } from "react";
  * pixels underneath it.
  */
 
+/**
+ * The depth axis.
+ *
+ * The site rests collapsed: the picker, with the shelf of work under it. One
+ * value runs the whole thing — openness, 0 at that resting picker and 1 with
+ * the selected project filling the screen.
+ *
+ * Openness has two drivers that hand off to each other. The opening sequence
+ * animates it 1 → 0, so the site arrives full bleed and pulls back to the
+ * shelf by itself. After that, scroll owns it, 0 → 1, and diving into a
+ * project is one continuous zoom rather than a cut.
+ *
+ * Nothing is ever entered by scrolling up. The zoom *is* the commit meter:
+ * it is analog, it is visible, and backing out costs exactly what going in
+ * did — so there is no separate threshold to cross.
+ *
+ * None of this crosses a route boundary. The case study's prose is part of
+ * the same document, below the pinned stage, and the address bar is kept in
+ * step with `replaceState`. A route change here would unmount the scene,
+ * which is what used to lose the visitor's project on the way back out.
+ */
+
+/** Total runway height, in svh. Travel is this less the pinned stage. */
+export const RUNWAY_VH = 200;
+/** Scroll progress at which the zoom has reached full bleed. */
+export const ZOOM_END = 0.62;
+/**
+ * Full bleed is held over the rest of the runway before the prose arrives,
+ * so the picture settles for a moment instead of being scrolled straight
+ * through.
+ */
+
 /** 1024.875px of container inside a 1440px viewport. */
 export const COLLAPSED_SCALE = 1024.875 / 1440;
 /** Phones need a gentler collapse, or the 18px headline lands under 14px. */
@@ -25,6 +57,18 @@ const GUTTER_RATIO = 78.704 / 1024.875;
 const THUMB_ASPECT = 3 / 2;
 /** Space between the container's bottom edge and the carousel. */
 const CAROUSEL_GAP_RATIO = 50.2 / 1024;
+/**
+ * Room under each thumbnail for its project title. The Figma frames carry
+ * bare photos; a work index has to name what it is showing, so the strip is
+ * this much taller than the measurements it is otherwise derived from.
+ */
+const LABEL_HEIGHT = 28;
+/**
+ * Room kept under the carousel for the scroll cue. It comes out of the
+ * margins the Figma frames leave, top and bottom alike, so the scene and
+ * strip keep their sizes and only move up a little to make space.
+ */
+const CUE_BAND = 48;
 /** Figma leaves 89px above the container and 61.8px below the carousel. */
 const BOTTOM_TO_TOP_RATIO = 61.8 / 89;
 /** Keep the scene off the edge on viewports too short for the full spacing. */
@@ -39,7 +83,11 @@ export type SceneLayout = {
   thumbWidth: number;
   thumbHeight: number;
   gutter: number;
+  /** Top edge of the collapsed scene, in stage pixels. */
+  sceneTop: number;
   carouselTop: number;
+  /** Centre of the space under the carousel's titles, for the scroll cue. */
+  cueY: number;
   /** Where the carousel waits, just past the stage's bottom edge. */
   carouselRestY: number;
 };
@@ -56,9 +104,11 @@ function measure(width: number, height: number): SceneLayout {
   const thumbHeight = thumbWidth / THUMB_ASPECT;
 
   const gap = height * CAROUSEL_GAP_RATIO;
-  const free = height * (1 - scale) - gap - thumbHeight;
+  const free =
+    height * (1 - scale) - gap - thumbHeight - LABEL_HEIGHT - CUE_BAND;
   const top = Math.max(MIN_TOP, free / (1 + BOTTOM_TO_TOP_RATIO));
   const carouselTop = top + height * scale + gap;
+  const stripBottom = carouselTop + thumbHeight + LABEL_HEIGHT;
 
   return {
     scale,
@@ -67,9 +117,12 @@ function measure(width: number, height: number): SceneLayout {
     thumbWidth,
     thumbHeight,
     gutter,
+    sceneTop: top,
     carouselTop,
-    // Far enough down for the stage's clip to hide it, shadow included.
-    carouselRestY: height - carouselTop + thumbHeight * 0.25,
+    cueY: stripBottom + (height - stripBottom) / 2,
+    // Far enough down for the stage's clip to hide it, label and shadow
+    // included.
+    carouselRestY: height - carouselTop + thumbHeight * 0.25 + LABEL_HEIGHT,
   };
 }
 

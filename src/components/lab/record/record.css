@@ -1,0 +1,292 @@
+/* The record console. Tokens are scoped to the figure (the kit's react.md). */
+
+.rc {
+  --rc-well: #d9d8d4;
+  --rc-slit: #4a4844;
+  --rc-glass: #eef2f4;
+  --rc-shine: #ffffff;
+  position: relative;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iso[data-theme="dark"] .rc {
+  --rc-well: #0c0c0c;
+  --rc-slit: #050505;
+  --rc-glass: #2a3034;
+  --rc-shine: #9aa4aa;
+}
+
+/* Once someone has picked a record, the hint gives the readout its room. */
+.iso-plate:has(.rc[data-picked]) .iso-plate-corner[data-corner="hint"] {
+  opacity: 0;
+  transition: opacity 400ms var(--anatomy-ease);
+}
+
+.rc .iso-svg {
+  overflow: visible;
+}
+
+/* The rack's well: a cavity, so its own darker set of tones. */
+.rc-well {
+  --anatomy-paper: #e6e5e1;
+  --anatomy-face: #dedcd7;
+  --anatomy-top: #e8e7e3;
+  --anatomy-shade-0: #cfcdc8;
+  --anatomy-shade-1: #d6d4cf;
+  --anatomy-shade-2: #dcdad5;
+  --anatomy-shade-3: #e2e0db;
+}
+
+.rc-well-fill {
+  fill: var(--rc-well);
+}
+
+.rc-slit {
+  fill: var(--rc-slit);
+}
+
+/* Black vinyl, in the drawing's own greys. */
+.rc-vinyl {
+  --anatomy-paper: #2b2b2e;
+  --anatomy-face: #303033;
+  --anatomy-top: #2f2f32;
+  --anatomy-shade-0: #222225;
+  --anatomy-shade-1: #26262a;
+  --anatomy-shade-2: #2a2a2d;
+  --anatomy-shade-3: #2e2e31;
+  --anatomy-faint: #45454a;
+  --anatomy-lo: #5a5a60;
+  --anatomy-mid: #18181a;
+}
+
+.rc-label {
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: var(--anatomy-weight);
+}
+
+.rc-print .iso-line {
+  stroke: rgba(20, 20, 20, 0.55);
+}
+
+.rc-hole {
+  fill: #121214;
+}
+
+/* The sleeves: covers are the only colour in the drawing. */
+.rc-sleeve {
+  cursor: pointer;
+  outline: none;
+}
+
+.rc-cover-light {
+  fill: #ffffff;
+  opacity: 0.08;
+}
+
+.rc-cover-edge {
+  fill: none;
+  stroke: var(--anatomy-mid);
+  stroke-width: var(--anatomy-weight);
+  stroke-linejoin: round;
+}
+
+.rc-sleeve[data-active] .rc-cover-edge {
+  stroke: var(--anatomy-lit);
+}
+
+.rc-sleeve:focus-visible .rc-cover-edge {
+  stroke: var(--anatomy-lit);
+  stroke-width: 1.1;
+}
+
+/* The dust cover: clear acrylic. */
+.rc-pane {
+  fill: var(--rc-glass);
+  fill-opacity: 0.32;
+  stroke: none;
+}
+
+.rc-shine {
+  fill: none;
+  stroke: var(--rc-shine);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.rc-shine[data-thin] {
+  stroke-width: 1.2;
+}
+
+.rc-tip {
+  fill: var(--anatomy-hi);
+}
+
+.rc-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .iso-plate:has(.rc) .iso-plate-corner[data-corner="readout"] {
+    left: 0;
+    white-space: normal;
+    text-align: right;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 640px) {
+  .iso-plate /* Once someone has picked a record, the hint gives the readout its room. */
+.iso-plate:has(.rc[data-picked]) .iso-plate-corner[data-corner="hint"] {
+  opacity: 0;
+  transition: opacity 400ms var(--anatomy-ease);
+}
+
+.rc .iso-svg {
+    width: 112%;
+    margin: -3% -6% -2%;
+  }
+}
+
+/*
+ * Materials. Each sets the kit's tokens for what's inside it: the fill, the
+ * top, the four side shades (0 faces away from the light) and the line tones.
+ */
+
+.rc-oak {
+  --anatomy-paper: #d1c5b5;
+  --anatomy-top: #dbd1c2;
+  --anatomy-shade-0: #b2a494;
+  --anatomy-shade-1: #bbad9b;
+  --anatomy-shade-2: #c4b8a6;
+  --anatomy-shade-3: #cdc1af;
+  --anatomy-hi: #836d58;
+  --anatomy-mid: #a4927d;
+  --anatomy-lo: #b1a696;
+  --anatomy-faint: #c4b8a8;
+}
+
+.rc-oak-shadow {
+  --anatomy-paper: #a69683;
+  --anatomy-top: #aea292;
+  --anatomy-shade-0: #99826b;
+  --anatomy-shade-1: #9e8a75;
+  --anatomy-shade-2: #a4927f;
+  --anatomy-shade-3: #a99a8a;
+  --anatomy-mid: #907860;
+  --anatomy-lo: #99826b;
+  --anatomy-faint: #9e8b77;
+  --rc-well: #a28f7a;
+}
+
+.rc-walnut {
+  --anatomy-paper: #5d3d28;
+  --anatomy-top: #74503a;
+  --anatomy-shade-0: #432a1a;
+  --anatomy-shade-1: #4f3321;
+  --anatomy-shade-2: #5a3b27;
+  --anatomy-shade-3: #65432d;
+  --anatomy-hi: #1d120b;
+  --anatomy-mid: #2e1d12;
+  --anatomy-lo: #3d2818;
+  --anatomy-faint: #7a573e;
+}
+
+.rc-alu {
+  --anatomy-paper: #d6d7d6;
+  --anatomy-top: #e6e6e3;
+  --anatomy-shade-0: #a5a7a8;
+  --anatomy-shade-1: #b4b6b7;
+  --anatomy-shade-2: #c2c4c4;
+  --anatomy-shade-3: #cfd0d0;
+  --anatomy-hi: #3a3c3e;
+  --anatomy-mid: #7c7e80;
+  --anatomy-lo: #989a9c;
+  --anatomy-faint: #b8babb;
+}
+
+.rc-chrome {
+  --anatomy-paper: #dcdddd;
+  --anatomy-top: #f4f4f3;
+  --anatomy-shade-0: #8c8f92;
+  --anatomy-shade-1: #a7aaac;
+  --anatomy-shade-2: #c2c4c5;
+  --anatomy-shade-3: #dadbdb;
+  --anatomy-hi: #2f3133;
+  --anatomy-mid: #6f7275;
+  --anatomy-lo: #8c8f92;
+  --anatomy-faint: #aeb1b3;
+}
+
+.rc-black {
+  --anatomy-paper: #2f2f31;
+  --anatomy-top: #3c3c3f;
+  --anatomy-shade-0: #1c1c1e;
+  --anatomy-shade-1: #232325;
+  --anatomy-shade-2: #2a2a2c;
+  --anatomy-shade-3: #313133;
+  --anatomy-hi: #d8d8da;
+  --anatomy-mid: #111112;
+  --anatomy-lo: #59595c;
+  --anatomy-faint: #4a4a4d;
+}
+
+.rc-felt {
+  --anatomy-paper: #444447;
+  --anatomy-top: #4d4d50;
+  --anatomy-shade-0: #2e2e30;
+  --anatomy-shade-1: #353537;
+  --anatomy-shade-2: #3b3b3e;
+  --anatomy-shade-3: #414144;
+  --anatomy-mid: #222224;
+  --anatomy-lo: #2b2b2d;
+  --anatomy-faint: #5a5a5d;
+}
+
+.rc-brass {
+  --anatomy-paper: #c5a052;
+  --anatomy-top: #dcb86a;
+  --anatomy-shade-0: #96712f;
+  --anatomy-shade-1: #a8823c;
+  --anatomy-shade-2: #b99349;
+  --anatomy-shade-3: #c7a256;
+  --anatomy-hi: #4b3612;
+  --anatomy-mid: #7a5a22;
+  --anatomy-lo: #9a7838;
+  --anatomy-faint: #b38f4a;
+}
+
+.rc-red {
+  --anatomy-paper: #b63c30;
+  --anatomy-top: #cf4a3c;
+  --anatomy-shade-0: #84261d;
+  --anatomy-shade-1: #962d23;
+  --anatomy-shade-2: #a8342a;
+  --anatomy-shade-3: #b63c30;
+  --anatomy-hi: #3d0f0b;
+  --anatomy-mid: #5e1812;
+  --anatomy-lo: #84261d;
+  --anatomy-faint: #c45a4e;
+}
+
+/* Sleeves are card stock: warm white. */
+.rc-card {
+  --anatomy-paper: #f1ede4;
+  --anatomy-top: #f7f4ed;
+  --anatomy-shade-0: #d6d0c3;
+  --anatomy-shade-1: #ddd8cc;
+  --anatomy-shade-2: #e4dfd5;
+  --anatomy-shade-3: #ebe7de;
+  --anatomy-mid: #9b958a;
+  --anatomy-faint: #cfc9bc;
+}
+
+.rc .iso-halo {
+  fill: #6e5a44;
+}

@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Image masters the site never loads (kept locally, not deployed)
+/public/photoGallery/
+/public/seasons/*.png
+/public/photos/photo-[0-9].jpeg

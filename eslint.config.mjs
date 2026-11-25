@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Agent skills vendored for Claude Code, not site code.
+    ".claude/**",
+    // The Anatomy drawing kit, vendored as is.
+    "src/components/iso/**",
   ]),
 ]);
 
