@@ -35,7 +35,7 @@ const rowan = localFont({
 export const metadata: Metadata = {
   title: "Devin Hayden",
   description:
-    "Devin is a product designer shaping boundless digital experiences.",
+    "Devin is a creative crafting moments worth a closer look, on screen and off.",
 };
 
 export default function RootLayout({

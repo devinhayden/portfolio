@@ -630,8 +630,9 @@ export function LandingHero({
         style={{ opacity: introOpacity, y: introY }}
         className="absolute inset-0 flex items-center justify-center px-4"
       >
-        <p className="max-w-[562px] text-center font-serif text-[clamp(1.5rem,6.4vw,2rem)] leading-[1.5] font-normal tracking-[-0.03em]">
-          Devin is a designer shaping what exists and pushing it beyond. You can
+        <p className="max-w-[612px] text-center font-serif text-[clamp(1.5rem,6.4vw,2rem)] leading-[1.5] font-normal tracking-[-0.03em]">
+          Devin is a creative crafting moments worth a closer look, on screen
+          and off. You can
           learn more about him on{" "}
           {/* Each mark is held to its punctuation, so a line never starts
               with a stray comma. */}
