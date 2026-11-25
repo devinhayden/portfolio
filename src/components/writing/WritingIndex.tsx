@@ -1,14 +1,21 @@
+"use client";
+
 import Link from "next/link";
 
 import { formatDate, PIECES, wordCount } from "@/components/writing/pieces";
+import { useWritingReader } from "@/components/writing/WritingReader";
 
 /**
  * The list of pieces (after Figma "Wireframe - 1"): an opening line in the
  * landing hero's voice, then one row per piece in a 678px column — the
  * title on the left, its length and date on the right. Rows are set apart
  * by space, not rules, as the hero is. Live as the Writing card's cover.
+ *
+ * A row opens its piece as a sheet over the index (`WritingReader`). It
+ * stays a real link, so a new tab or a copied address still works.
  */
 export function WritingIndex() {
+  const reader = useWritingReader();
   return (
     <div className="flex w-full max-w-[678px] flex-col items-center">
       <h1 className="type-display max-w-[562px] text-center">
@@ -19,6 +26,11 @@ export function WritingIndex() {
           <li key={piece.slug}>
             <Link
               href={`/writing/${piece.slug}`}
+              onClick={(event) => {
+                if (!reader || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                event.preventDefault();
+                reader.open(piece.slug);
+              }}
               className="group flex h-[60px] items-center justify-between gap-6 rounded-[8px] px-3 transition-colors hover:bg-ink/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               <span className="type-title">{piece.title}</span>

@@ -12,8 +12,9 @@ import { DESIGN_PROJECTS } from "./designProjects";
  * switch projects (under the byline on a phone, with the dots), and a swipe
  * on the card or the arrow keys do too.
  *
- * The card's shape follows the screen's, so it eases wider or narrower as
- * the projects change; the screens, headlines and bylines crossfade.
+ * The card keeps one shape for every project, the widest of their screens,
+ * so switching never resizes it: each screen is fitted inside it, and the
+ * screens, headlines and bylines simply crossfade in place.
  *
  * Controlled: `index` is the project on show. Arrow keys only switch when
  * `keyboard` is on.
@@ -30,6 +31,11 @@ const SWIPE = 40;
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
+/** The card's shape: the widest screen's, so every screen fits inside it. */
+const ASPECT = Math.max(
+  ...DESIGN_PROJECTS.map((item) => item.hero.width / item.hero.height),
+);
+
 export function DesignCarousel({
   index,
   onChange,
@@ -40,7 +46,6 @@ export function DesignCarousel({
   keyboard?: boolean;
 }) {
   const count = DESIGN_PROJECTS.length;
-  const project = DESIGN_PROJECTS[index];
   const step = (delta: number) => onChange(mod(index + delta, count));
 
   const indexRef = useRef(index);
@@ -66,7 +71,7 @@ export function DesignCarousel({
   }, [keyboard, count]);
 
   const swipeFrom = useRef<number | null>(null);
-  const aspect = project.hero.width / project.hero.height;
+  const aspect = ASPECT;
   // …and no wider than the row has room for: the whole width less the
   // gutters on a phone, less the arrows beside it too from `sm` up.
   const height = `min(${FIT_HEIGHT}, calc((var(--room) - ${PADDING * 2}px) / ${aspect} + ${PADDING * 2}px))`;
@@ -116,13 +121,13 @@ export function DesignCarousel({
               height,
               width: `calc((${height} - ${PADDING * 2}px) * ${aspect} + ${PADDING * 2}px)`,
             }}
-            className="relative max-w-full transition-[width,height] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+            className="relative max-w-full"
           >
             {DESIGN_PROJECTS.map((item, i) => (
               <div
                 key={item.slug}
                 aria-hidden={i !== index}
-                className={`absolute inset-[24px] transition-opacity duration-500 ease-out motion-reduce:transition-none ${
+                className={`absolute inset-[24px] transition-opacity duration-[420ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${
                   i === index ? "opacity-100" : "opacity-0"
                 }`}
               >

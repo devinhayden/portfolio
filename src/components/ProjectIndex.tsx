@@ -20,6 +20,7 @@ import {
 import { useDialKit, type TransitionConfig } from "dialkit";
 
 import { LandingHero } from "@/components/LandingHero";
+import { MobileSite } from "@/components/MobileSite";
 import { ProjectCarousel } from "@/components/ProjectCarousel";
 import { ScrollCue } from "@/components/ScrollCue";
 import { DesignCarousel } from "@/components/design/DesignCarousel";
@@ -33,6 +34,8 @@ import {
 } from "@/components/projects";
 import { PhotoGrid } from "@/components/photos/PhotoGrid";
 import { WritingIndex } from "@/components/writing/WritingIndex";
+import { WritingReader } from "@/components/writing/WritingReader";
+import { PHONE, useMedia } from "@/components/useMedia";
 import {
   COLLAPSED_SCALE,
   CONTAINER_RADIUS,
@@ -116,7 +119,33 @@ function decoded(image: HTMLImageElement) {
 }
 
 /**
- * The site: one document that opens on the landing full bleed, pulls back to
+ * The site. On a phone the cards don't have room to sit side by side, so
+ * the same pages come as plain tabs instead (`MobileSite`); everywhere else
+ * it's the scroll-in picker below. Either way a piece of writing opens as a
+ * sheet over the page (`WritingReader`), and `initialPiece` is the one a
+ * direct link to it opened on.
+ */
+export function ProjectIndex({
+  initialSlug,
+  initialPiece,
+}: {
+  initialSlug?: string;
+  initialPiece?: string;
+}) {
+  const phone = useMedia(PHONE);
+  return (
+    <WritingReader initialSlug={initialPiece}>
+      {phone ? (
+        <MobileSite initialSlug={initialSlug} />
+      ) : (
+        <PickerIndex initialSlug={initialSlug} />
+      )}
+    </WritingReader>
+  );
+}
+
+/**
+ * The scroll-in picker: one document that opens on the landing full bleed, pulls back to
  * a picker of cards, and dives into whichever card is chosen.
  *
  * The cards are the site's four pages: home (the landing and About),
@@ -129,7 +158,7 @@ function decoded(image: HTMLImageElement) {
  * shared link pulls back to the shelf exactly as it would have done had the
  * visitor scrolled in themselves.
  */
-export function ProjectIndex({ initialSlug }: { initialSlug?: string }) {
+function PickerIndex({ initialSlug }: { initialSlug?: string }) {
   const cardIndex = CARDS.findIndex((card) => card.slug === initialSlug);
   const entryIndex = cardIndex < 0 ? HOME_INDEX : cardIndex;
   const entered = initialSlug !== undefined;

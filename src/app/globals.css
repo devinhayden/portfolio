@@ -259,3 +259,22 @@ html:active-view-transition-type(photos-stack)::view-transition-new(.photo) {
     opacity: var(--menu-grain-strength, 0);
   }
 }
+
+/*
+ * The photo grid's simple mode (phones, tablets, touch; see PhotoGrid.tsx):
+ * a stack's photos fade up into their cells instead of flying out of it.
+ */
+.photo-appear {
+  animation: photo-appear 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes photo-appear {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .photo-appear {
+    animation: none;
+  }
+}

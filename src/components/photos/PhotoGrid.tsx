@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { AnimatePresence, motion } from "motion/react";
 import {
   addTransitionType,
   startTransition,
@@ -12,6 +13,8 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
+
+import { TOUCH, useMedia } from "@/components/useMedia";
 
 import { PHOTO_GROUPS, type Photo, type PhotoGroup } from "./photoGroups";
 
@@ -25,6 +28,10 @@ import { PHOTO_GROUPS, type Photo, type PhotoGroup } from "./photoGroups";
  * All of the motion is the browser's View Transitions API, through React's
  * `<ViewTransition>`: every photo is named, so a state change is all it
  * takes for each one to travel from where it was to where it lands.
+ *
+ * On phones, tablets and touch screens the flights give way to plain fades
+ * (`simple`). Mobile browsers capture and composite dozens of named photos
+ * slowly, and the result stutters and jumps; a fade stays smooth.
  *
  * `active` is whether the grid is the page on show; leaving closes it.
  */
@@ -83,7 +90,16 @@ function details(photo: Photo) {
     .join(" · ");
 }
 
-function go(kind: "stack" | "zoom-in" | "zoom-out", update: () => void) {
+function go(
+  kind: "stack" | "zoom-in" | "zoom-out",
+  update: () => void,
+  simple = false,
+) {
+  // A plain update isn't a transition, so no view transition runs.
+  if (simple) {
+    update();
+    return;
+  }
   startTransition(() => {
     addTransitionType(TYPE);
     if (kind === "stack") addTransitionType(`${TYPE}-stack`);
@@ -225,6 +241,7 @@ function Print({
 }
 
 export function PhotoGrid({ active }: { active: boolean }) {
+  const simple = useMedia(TOUCH);
   const [openId, setOpenId] = useState<string | null>(null);
   /** The groups the last open or close moved: the one shut, the one opened. */
   const [moving, setMoving] = useState<string[]>([]);
@@ -246,20 +263,32 @@ export function PhotoGrid({ active }: { active: boolean }) {
   }
 
   const openGroup = (group: PhotoGroup) =>
-    go("stack", () => {
-      setMoving([group.id]);
-      setOpenId(group.id);
-    });
+    go(
+      "stack",
+      () => {
+        setMoving([group.id]);
+        setOpenId(group.id);
+      },
+      simple,
+    );
   const closeGroup = () =>
-    go("stack", () => {
-      setMoving(openId ? [openId] : []);
-      setOpenId(null);
-    });
+    go(
+      "stack",
+      () => {
+        setMoving(openId ? [openId] : []);
+        setOpenId(null);
+      },
+      simple,
+    );
   const enlarge = (photo: Photo, group: PhotoGroup) =>
-    go("zoom-in", () => {
-      setZooming(photo.id);
-      setEnlarged({ photo, group });
-    });
+    go(
+      "zoom-in",
+      () => {
+        setZooming(photo.id);
+        setEnlarged({ photo, group });
+      },
+      simple,
+    );
   /**
    * Closing an enlarged photo is two steps. First it settles into a print
    * (in EnlargedPhoto): the caption fades, and the photo crops to its
@@ -270,7 +299,9 @@ export function PhotoGrid({ active }: { active: boolean }) {
   const [closing, setClosing] = useState(false);
   const shrink = () => {
     if (!enlarged || closing) return;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) finishShrink();
+    // Without the flight there's nothing to settle for: just fade out.
+    if (simple) setEnlarged(null);
+    else if (matchMedia("(prefers-reduced-motion: reduce)").matches) finishShrink();
     else setClosing(true);
   };
   const finishShrink = () =>
@@ -327,7 +358,10 @@ export function PhotoGrid({ active }: { active: boolean }) {
           if (group.id !== openId) {
             const single = group.photos.length === 1;
             return [
-              <li key={`stack-${group.id}`} className="pt-4">
+              <li
+                key={`stack-${group.id}`}
+                className={`pt-4 ${simple && moving.includes(group.id) ? "photo-appear" : ""}`}
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -353,7 +387,7 @@ export function PhotoGrid({ active }: { active: boolean }) {
                       <Print
                         key={photo.id}
                         photo={photo}
-                        named={enlarged?.photo.id !== photo.id}
+                        named={simple || enlarged?.photo.id !== photo.id}
                         // Dimmed on the print itself, not the button: a named
                         // element's snapshot leaves out its parents' effects.
                         dim={dim}
@@ -380,7 +414,11 @@ export function PhotoGrid({ active }: { active: boolean }) {
           }
 
           return group.photos.map((photo, i) => (
-            <li key={`photo-${photo.id}`} className="pt-4">
+            <li
+              key={`photo-${photo.id}`}
+              className={`pt-4 ${simple ? "photo-appear" : ""}`}
+              style={simple ? { animationDelay: `${i * 35}ms` } : undefined}
+            >
               <button
                 type="button"
                 onClick={() => enlarge(photo, group)}
@@ -390,7 +428,7 @@ export function PhotoGrid({ active }: { active: boolean }) {
                 <div className="size-full">
                   <Print
                     photo={photo}
-                    named={enlarged?.photo.id !== photo.id}
+                    named={simple || enlarged?.photo.id !== photo.id}
                   />
                 </div>
               </button>
@@ -419,6 +457,7 @@ export function PhotoGrid({ active }: { active: boolean }) {
         onClose={shrink}
         closing={closing}
         onSettled={finishShrink}
+        simple={simple}
       />
     </div>
   );
@@ -461,6 +500,7 @@ function Enlarged({
   onClose,
   closing,
   onSettled,
+  simple,
 }: {
   photo: Photo | null;
   group: PhotoGroup | null;
@@ -468,6 +508,8 @@ function Enlarged({
   /** Settling into a print, before flying back. */
   closing: boolean;
   onSettled: () => void;
+  /** Fade in and out rather than fly (see PhotoGrid). */
+  simple: boolean;
 }) {
   const open = photo !== null;
   // Hold the page still underneath: a scroll here would leave the page.
@@ -494,19 +536,48 @@ function Enlarged({
       role={open ? "dialog" : undefined}
       aria-modal={open || undefined}
       aria-label={photo?.alt}
-      className={`text-ink fixed inset-0 z-[70] ${open ? "" : "pointer-events-none"}`}
+      className={`text-ink fixed inset-0 z-[70] ${open ? "" : "pointer-events-none"} ${simple ? "touch-none" : ""}`}
     >
-      {photo && group && (
-        <EnlargedPhoto
-          photo={photo}
-          onClose={onClose}
-          closing={closing}
-          onSettled={onSettled}
-        />
+      {simple ? (
+        <AnimatePresence>
+          {photo && group && (
+            <motion.div
+              key={photo.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="absolute inset-0"
+            >
+              <EnlargedPhoto
+                photo={photo}
+                onClose={onClose}
+                closing={false}
+                onSettled={onSettled}
+                fly={false}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      ) : (
+        photo &&
+        group && (
+          <EnlargedPhoto
+            photo={photo}
+            onClose={onClose}
+            closing={closing}
+            onSettled={onSettled}
+          />
+        )
       )}
     </div>,
     document.body,
   );
+}
+
+/** Stands in for `<ViewTransition>` where nothing should be named. */
+function Plain({ children }: { children: React.ReactNode } & Record<string, unknown>) {
+  return <>{children}</>;
 }
 
 /** The settle before flying back: quick, and easing to a stop. */
@@ -519,12 +590,19 @@ function EnlargedPhoto({
   onClose,
   closing,
   onSettled,
+  fly = true,
 }: {
   photo: Photo;
   onClose: () => void;
   closing: boolean;
   onSettled: () => void;
+  /**
+   * Off in simple mode: nothing flies, and the thumbnail keeps its name, so
+   * this copy mustn't take it too.
+   */
+  fly?: boolean;
 }) {
+  const Named = fly ? ViewTransition : Plain;
   const aspect = photo.width / photo.height;
   const [sharp, setSharp] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -609,19 +687,19 @@ function EnlargedPhoto({
 
   return (
     <>
-      <ViewTransition
+      <Named
         name="photo-backdrop"
         enter="photo-fade"
         exit="photo-fade"
       >
         <div onClick={onClose} className="page-ground absolute inset-0" />
-      </ViewTransition>
+      </Named>
 
       {/* The column enters as one piece, which carries the caption in; the
           photo inside it has its own name, so it morphs on its own. */}
-      <ViewTransition name="photo-caption" enter="photo-rise" exit="photo-fade">
+      <Named name="photo-caption" enter="photo-rise" exit="photo-fade">
         <div className="pointer-events-none relative flex h-full flex-col items-center justify-center px-4 py-16">
-          <ViewTransition name={`photo-${photo.id}`} default="photo">
+          <Named name={`photo-${photo.id}`} default="photo">
             <div
               ref={frameRef}
               onClick={onClose}
@@ -660,7 +738,7 @@ function EnlargedPhoto({
                 />
               </div>
             </div>
-          </ViewTransition>
+          </Named>
 
           <div
             ref={captionRef}
@@ -670,7 +748,7 @@ function EnlargedPhoto({
             <p className="type-mono text-ink/45">{details(photo)}</p>
           </div>
         </div>
-      </ViewTransition>
+      </Named>
 
       <button
         ref={closeRef}
