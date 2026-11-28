@@ -18,9 +18,18 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
+  type ReactNode,
 } from "react";
 import { useDialKit } from "dialkit";
 
+import {
+  INK_FILTER,
+  MAGNIFIER_MEDIA,
+  Magnifier,
+  MagnifierIcon,
+  MagnifierMark,
+} from "@/components/Magnifier";
 import { PHONE, useMedia } from "@/components/useMedia";
 
 /**
@@ -623,6 +632,14 @@ export function LandingHero({
 
   const introLive = phase === "intro";
 
+  // The magnifier: desktop only, and only while the intro is up and settled.
+  // "out" is in the hand; "back" is on its way into the sentence.
+  const magnifiable = useMedia(MAGNIFIER_MEDIA);
+  const iconRef = useRef<HTMLButtonElement>(null);
+  const [glass, setGlass] = useState<"off" | "out" | "back">("off");
+  // Leaving the intro (the bubble, a scroll into the picker) puts it back.
+  const glassOut = glass === "out" && attention && introLive;
+
   // Every few seconds while the intro waits, the bubble hops to say it can
   // be clicked. It waits for the visitor to settle on the card, and stays
   // still for anyone who asked for less motion.
@@ -660,7 +677,7 @@ export function LandingHero({
     <section
       ref={sectionRef}
       aria-label="About Devin"
-      className="text-ink page-ground relative size-full overflow-hidden"
+      className={`text-ink page-ground relative size-full overflow-hidden ${glassOut ? "cursor-none [&_*]:cursor-none!" : ""}`}
     >
       {/* Frame 1: the sentence, centred. */}
       <motion.div
@@ -669,35 +686,17 @@ export function LandingHero({
         style={{ opacity: introOpacity, y: introY }}
         className="absolute inset-0 flex items-center justify-center px-4"
       >
-        <p className="max-w-[612px] text-center font-serif text-[clamp(1.5rem,6.4vw,2rem)] leading-[1.5] font-normal tracking-[-0.03em]">
-          Devin is a creative crafting moments worth a closer look, on screen
-          and off. You can
-          learn more about him on{" "}
-          {/* Each mark is held to its punctuation, so a line never starts
-              with a stray comma. */}
-          <span className="whitespace-nowrap">
-            <InlineIcon
-              href={LINKS.linkedin}
-              label="Devin on LinkedIn"
-              src="/social/linkedin.png"
-            />
-            ,
-          </span>{" "}
-          check out more of his work on{" "}
-          <span className="whitespace-nowrap">
-            <InlineIcon href={LINKS.x} label="Devin on X" src="/social/x.png" />
-            ,
-          </span>{" "}
-          or reach him via{" "}
-          <span className="whitespace-nowrap">
-            <InlineIcon
-              href={LINKS.email}
-              label="Email Devin"
-              src="/social/gmail.png"
-            />
-            .
-          </span>
-        </p>
+        <Sentence
+          slot={
+            magnifiable && (
+              <MagnifierIcon
+                ref={iconRef}
+                away={glass !== "off"}
+                onClick={() => setGlass("out")}
+              />
+            )
+          }
+        />
       </motion.div>
 
       {/* The bubble beside the peeking portrait, its tail toward it. */}
@@ -858,6 +857,23 @@ export function LandingHero({
           </motion.div>
         ))}
       </div>
+
+      {magnifiable && glass !== "off" && (
+        <Magnifier
+          out={glassOut}
+          onClose={() => setGlass("back")}
+          onReturned={() => setGlass("off")}
+          sectionRef={sectionRef}
+          iconRef={iconRef}
+        >
+          <LensScene
+            portrait={cards[PORTRAIT_CARD]}
+            bubbleY={bubbleY}
+            bubbleRotate={bubbleRotate}
+            peekLift={peekLift}
+          />
+        </Magnifier>
+      )}
     </section>
   );
 }
@@ -901,6 +917,135 @@ function CardFace({ index, onLoad }: { index: number; onLoad?: () => void }) {
   );
 }
 
+/**
+ * The intro's one sentence. `slot` is the magnifier's icon, after "closer
+ * look", on screens that get the glass. `ghost` is the copy drawn under the
+ * glass: the same layout, but nothing in it is a link.
+ */
+function Sentence({
+  slot,
+  ghost = false,
+  className = "",
+  style,
+}: {
+  slot?: ReactNode;
+  ghost?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <p
+      style={style}
+      className={`max-w-[612px] text-center font-serif text-[clamp(1.5rem,6.4vw,2rem)] leading-[1.5] font-normal tracking-[-0.03em] ${className}`}
+    >
+      Devin is a creative crafting moments worth a closer{" "}
+      <span className="whitespace-nowrap">
+        look
+        {slot}
+        ,
+      </span>{" "}
+      on screen and off. You can learn more about him on{" "}
+      {/* Each mark is held to its punctuation, so a line never starts
+          with a stray comma. */}
+      <span className="whitespace-nowrap">
+        <InlineIcon
+          href={LINKS.linkedin}
+          label="Devin on LinkedIn"
+          src="/social/linkedin.png"
+          ghost={ghost}
+        />
+        ,
+      </span>{" "}
+      check out more of his work on{" "}
+      <span className="whitespace-nowrap">
+        <InlineIcon
+          href={LINKS.x}
+          label="Devin on X"
+          src="/social/x.png"
+          ghost={ghost}
+        />
+        ,
+      </span>{" "}
+      or reach him via{" "}
+      <span className="whitespace-nowrap">
+        <InlineIcon
+          href={LINKS.email}
+          label="Email Devin"
+          src="/social/gmail.png"
+          ghost={ghost}
+        />
+        .
+      </span>
+    </p>
+  );
+}
+
+/**
+ * Everything the intro shows, again, for under the magnifier: the sentence,
+ * the peeking portrait and its bubble, on the same motion values as the real
+ * ones so they stay in step. The text is drawn twice — once with the ink
+ * filter and the icons hidden, once with only the icons — so the ink bleeds
+ * but the app icons stay as crisp as stickers.
+ */
+function LensScene({
+  portrait,
+  bubbleY,
+  bubbleRotate,
+  peekLift,
+}: {
+  portrait: CardMotion;
+  bubbleY: MotionValue<number>;
+  bubbleRotate: MotionValue<number>;
+  peekLift: number;
+}) {
+  const slot = (
+    <span className="invisible relative -top-[0.07em] ml-[0.2em] mr-[0.12em] inline-block align-middle">
+      <MagnifierMark />
+    </span>
+  );
+  const layer = "absolute inset-0 flex items-center justify-center px-4";
+  return (
+    <>
+      <div className={`${layer} text-ink`}>
+        <Sentence
+          ghost
+          slot={slot}
+          className="[&_img]:invisible"
+          style={{ filter: `url(#${INK_FILTER})` }}
+        />
+      </div>
+      <div className={`${layer} text-transparent`}>
+        <Sentence ghost slot={slot} />
+      </div>
+      <motion.div
+        style={{
+          x: portrait.x,
+          y: portrait.y,
+          rotate: portrait.rotate,
+          scaleX: portrait.flip,
+          scale: portrait.scale,
+        }}
+        className="absolute top-1/2 left-1/2 -mt-[47.5px] -ml-[47.5px]"
+      >
+        <CardFace index={PORTRAIT_CARD} />
+      </motion.div>
+      <motion.div
+        style={{
+          y: bubbleY,
+          rotate: bubbleRotate,
+          originX: 0,
+          originY: 1,
+          bottom: 80 + peekLift,
+          filter: `url(#${INK_FILTER})`,
+        }}
+        className="text-ink absolute left-[calc(50%+58px)] rounded-t-[8px] rounded-br-[8px] border border-[#ececec] bg-[rgba(213,213,213,0.2)] px-4 py-2 font-mono text-[12px] leading-[1.5] tracking-[-0.03em] whitespace-nowrap uppercase"
+      >
+        Click to learn more!
+      </motion.div>
+    </>
+  );
+}
+
 const iconLink =
   "inline-block align-middle rounded-[0.1em] transition-transform duration-200 ease-out hover:-translate-y-[0.06em] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink";
 
@@ -908,12 +1053,27 @@ function InlineIcon({
   href,
   label,
   src,
+  ghost = false,
 }: {
   href: string;
   label: string;
   src: string;
+  ghost?: boolean;
 }) {
   const external = href.startsWith("http");
+  if (ghost) {
+    return (
+      <span className={`${iconLink} relative -top-[0.07em] mx-[0.12em]`}>
+        <Image
+          src={src}
+          alt=""
+          width={32}
+          height={32}
+          className="block size-[1em] rounded-[0.1em]"
+        />
+      </span>
+    );
+  }
   return (
     <a
       href={href}
